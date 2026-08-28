@@ -121,8 +121,8 @@ const Step1SetUp = ({ onStart }) => {
 
       setAnalysisResult(null);
 
-      alert(
-        error.response?.data?.message ||
+      console.log(
+        error ||
           "Failed to analyze resume. Please try again."
       );
     } finally {

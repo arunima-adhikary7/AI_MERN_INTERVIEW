@@ -52,7 +52,10 @@ function App() {
       <Route path="/forgot-password" element={<Auth />} />
       <Route path="/interview" element={<Interview />} />
       <Route path="/about" element={<About />} />
-      <Route path='/1' element={<Step1SetUp/>}/>
+      <Route path='/1' element={<Step1SetUp onStart={(data) => {
+        console.log("Interview data:", data);
+        // move to next interview step here
+      }} />}/>
       <Route path='/2' element={<Step2Interview/>}/>
       <Route path='/3' element={<Step3Interview/>}/>
       <Route path='/4' element ={<Pricing/>}/>

@@ -1,6 +1,7 @@
 import fs from 'fs';
 import { parse } from 'path';
 import * as pdfjLib from 'pdfjs-dist/legacy/build/pdf.mjs'
+import { askAi } from '../sevices/openRouter.service.js';
 
 export const analyzeResume = async (req,res)=>{
     try {

@@ -19,6 +19,7 @@ export const askAi = async (messages) => {
         if(!content || !content.trim())
             throw new Error("Open Router Ai error");
     } catch (error) {
-
+        console.log(error.message);
+        
     }
 }
