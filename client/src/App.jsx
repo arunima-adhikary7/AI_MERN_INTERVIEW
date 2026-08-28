@@ -8,7 +8,9 @@ import Interview from "./pages/Interview";
 import About from "./pages/About";
 import { setUserData } from "./redux/userSlice";
 import { useDispatch } from "react-redux";
+import Step1SetUp from "./components/Step1SetUp" 
 export const ServerURL = "http://localhost:8000";
+import Step2Interview from  "./components/Step2Interview";
 
 function App() {
 
@@ -48,6 +50,9 @@ function App() {
       <Route path="/forgot-password" element={<Auth />} />
       <Route path="/interview" element={<Interview />} />
       <Route path="/about" element={<About />} />
+      <Route path='/1' element={<Step1SetUp/>}/>
+      <Route path='/2' element={<Step2Interview/>}/>
+
     </Routes>
   );
 }
