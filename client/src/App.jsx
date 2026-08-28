@@ -11,6 +11,8 @@ import { useDispatch } from "react-redux";
 import Step1SetUp from "./components/Step1SetUp" 
 export const ServerURL = "http://localhost:8000";
 import Step2Interview from  "./components/Step2Interview";
+import Step3Interview from "./components/Step3Interview";
+import Pricing from "./components/Pricing";
 
 function App() {
 
@@ -52,6 +54,9 @@ function App() {
       <Route path="/about" element={<About />} />
       <Route path='/1' element={<Step1SetUp/>}/>
       <Route path='/2' element={<Step2Interview/>}/>
+      <Route path='/3' element={<Step3Interview/>}/>
+      <Route path='/4' element ={<Pricing/>}/>
+
 
     </Routes>
   );
