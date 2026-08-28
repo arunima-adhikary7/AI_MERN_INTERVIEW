@@ -2,6 +2,7 @@ import { useLocation } from "react-router-dom";
 import LoginCard from "../components/LoginCard";
 import SignupCard from "../components/SignupCard";
 import ForgotPasswordCard from "../components/ForgotPasswordCard";
+import { useDispatch } from "react-redux";
 export default function Auth() {
    
     const dispatch = useDispatch();
