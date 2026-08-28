@@ -13,6 +13,7 @@ export const ServerURL = "http://localhost:8000";
 import Step2Interview from  "./components/Step2Interview";
 import Step3Interview from "./components/Step3Interview";
 import Pricing from "./components/Pricing";
+import Profile from "./components/Profile";
 
 function App() {
 
@@ -49,6 +50,7 @@ function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Auth />} />
       <Route path="/signup" element={<Auth />} />
+      <Route path="/profile" element={<Profile/>} />
       <Route path="/forgot-password" element={<Auth />} />
       <Route path="/interview" element={<Interview />} />
       <Route path="/about" element={<About />} />

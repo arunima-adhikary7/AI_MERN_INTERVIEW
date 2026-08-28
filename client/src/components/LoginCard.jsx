@@ -63,6 +63,7 @@ export default function LoginCard() {
       console.log("Authentication cookie received.");
 
       navigate("/");
+      window.location.reload();
 
     } catch (error) {
       console.error("Login error:", error);
