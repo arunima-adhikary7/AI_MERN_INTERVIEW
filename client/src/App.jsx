@@ -5,6 +5,7 @@ import LandingPage from './pages/LandingPage'
 import Interview from './pages/Interview'
 import About from './pages/About'
 
+export const ServerURL="http://localhost:8000"
 function App() {
   const [count, setCount] = useState(0)
 

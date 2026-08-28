@@ -1,10 +1,11 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import connectDB from "./config/db.js";
-import { isAuth } from "./middlewares/auth.middleware.js";
-import userRouter from "./routes/user.js";
+import connectDB from "./config/connectionDb.js";
+// import { isAuth } from "./middlewares/isAuth.js";
+// import userRouter from "./routes/user.js";
 import cookieParser from "cookie-parser";
+import authRouter from "./routes/auth.route.js";
 
 dotenv.config();
 const app = express();
@@ -17,8 +18,8 @@ app.use(express.json());
 app.use(cookieParser());
 
 
-app.use("/api/user", userRouter);
-app.use("/api/user",userRouter);
+app.use("/api/auth", authRouter);
+// app.use("/api/user",userRouter);
 
 const PORT = process.env.PORT || 6000;
 app.listen(PORT, async () => {
