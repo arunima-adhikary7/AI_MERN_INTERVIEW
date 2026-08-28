@@ -6,11 +6,13 @@ import Auth from "./pages/Auth";
 import LandingPage from "./pages/LandingPage";
 import Interview from "./pages/Interview";
 import About from "./pages/About";
-
+import { setUserData } from "./redux/userSlice";
+import { useDispatch } from "react-redux";
 export const ServerURL = "http://localhost:8000";
 
 function App() {
 
+  const dispatch = useDispatch();
   useEffect(() => {
 
     const getUser = async () => {
@@ -21,13 +23,15 @@ function App() {
           {
             withCredentials: true
           }
+         
         );
-
+   dispatch(setUserData(result.data))
         console.log("Current user:", result.data);
 
       } catch (err) {
 
         console.error("Error fetching user:", err);
+         dispatch(setUserData(null))
 
       }
     };
