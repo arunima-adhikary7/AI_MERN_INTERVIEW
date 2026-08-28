@@ -1,9 +1,32 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
+import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { LuBot, LuUser, LuMail, LuLock } from "react-icons/lu";
+import { auth } from "../utils/firebase";
+import axios from "axios";
+import { ServerURL } from "../App";
 
 export default function SignupCard() {
+     const handleGoogleSignIn = async () => {
+    try {
+        const provider = new GoogleAuthProvider();
+
+        const response = await signInWithPopup(auth, provider);
+        let User = response.user;
+        let name = User.displayName;
+        let email = User.email;
+        const result=await axios.post(ServerURL+"/api/auth/google",{name,email},{
+            withCredentials:true
+        });
+        console.log("Server response:", result.data);
+
+        console.log("Google user:", response.user);
+    }
+     catch (error) {
+        console.error("Error signing in with Google:", error);
+    }
+};
     const [form, setForm] = useState({
         name: "",
         email: "",
@@ -86,7 +109,8 @@ export default function SignupCard() {
                 <div className="h-px flex-1 bg-gray-200" />
             </div>
 
-            <button className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-200 py-3 font-medium text-gray-700 hover:bg-gray-50">
+            <button className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-200 py-3 font-medium text-gray-700 hover:bg-gray-50"
+            onClick={handleGoogleSignIn}>
                 <FcGoogle size={21} />
                 Sign up with Google
             </button>

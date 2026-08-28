@@ -4,6 +4,7 @@ import SignupCard from "../components/SignupCard";
 import ForgotPasswordCard from "../components/ForgotPasswordCard";
 
 export default function Auth() {
+   
     const { pathname } = useLocation();
 
     if (pathname === "/signup") {
