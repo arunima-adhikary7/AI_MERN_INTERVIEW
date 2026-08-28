@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/connectionDb.js";
 // import { isAuth } from "./middlewares/isAuth.js";
-// import userRouter from "./routes/user.js";
+ import userRouter from "./routes/user.route.js";
 import cookieParser from "cookie-parser";
 import authRouter from "./routes/auth.route.js";
 
@@ -19,7 +19,7 @@ app.use(cookieParser());
 
 
 app.use("/api/auth", authRouter);
-// app.use("/api/user",userRouter);
+app.use("/api/user",userRouter);
 
 const PORT = process.env.PORT || 6000;
 app.listen(PORT, async () => {
