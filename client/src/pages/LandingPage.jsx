@@ -77,7 +77,7 @@ export default function LandingPage() {
                         >
                             Smarter interview practice powered by AI.
                         </motion.p>
-        
+
                         <motion.div
                             variants={fadeUp}
                             className="mt-9 flex flex-col gap-3 sm:flex-row"
@@ -127,25 +127,27 @@ export default function LandingPage() {
                                         <LuBot size={30} />
                                     </div>
                                 </div>
-
-                                <div className="mt-10 flex items-center gap-2">
-                                    {[1, 2, 3, 4, 5, 6, 7, 8].map((bar) => (
-                                        <motion.div
-                                            key={bar}
-                                            animate={{ height: [10, 28, 15, 35, 10] }}
-                                            transition={{
-                                                duration: 1,
-                                                repeat: Infinity,
-                                                delay: bar * 0.08,
-                                            }}
-                                            className="w-1 rounded-full bg-green-400"
-                                        />
-                                    ))}
+                                <div className="flex flex-col justify-center items-center">
+                                    <div className="h-1 flex">
+                                        <div className="mt-10 flex items-center gap-2">
+                                            {[1, 2, 3, 4, 5, 6, 7, 8].map((bar) => (
+                                                <motion.div
+                                                    key={bar}
+                                                    animate={{ height: [10, 28, 15, 35, 10] }}
+                                                    transition={{
+                                                        duration: 1,
+                                                        repeat: Infinity,
+                                                        delay: bar * 0.08,
+                                                    }}
+                                                    className="w-1 rounded-full bg-green-400"
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <p className="mt-4 text-sm fixed text-gray-400">
+                                        Listening...
+                                    </p>
                                 </div>
-
-                                <p className="mt-4 text-sm text-gray-400">
-                                    Listening...
-                                </p>
                             </div>
                         </div>
                     </motion.div>
