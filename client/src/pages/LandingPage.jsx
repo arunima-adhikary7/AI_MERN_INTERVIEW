@@ -144,9 +144,9 @@ export default function LandingPage() {
                                             ))}
                                         </div>
                                     </div>
-                                    <p className="mt-4 text-sm fixed text-gray-400">
+                                    {/* <p className="mt-4 text-sm fixed text-gray-400">
                                         Listening...
-                                    </p>
+                                    </p> */}
                                 </div>
                             </div>
                         </div>

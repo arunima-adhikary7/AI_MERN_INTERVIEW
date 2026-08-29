@@ -9,9 +9,14 @@ import {
   Upload,
   FileText,
 } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { setUserData } from "../redux/userSlice";
 
 const Step1SetUp = ({ onStart }) => {
+  const { userData } = useSelector((state) => state.user)
+  const dispatch = useDispatch();
   const [role, setRole] = useState("");
+  const [loading, setLoading] = useState(true);
   const [experience, setExperience] = useState("");
   const [interviewType, setInterviewType] =
     useState("Technical Interview");
@@ -140,7 +145,7 @@ const Step1SetUp = ({ onStart }) => {
 
       alert(
         error.response?.data?.message ||
-          "Failed to analyze resume. Please try again."
+        "Failed to analyze resume. Please try again."
       );
 
     } finally {
@@ -152,40 +157,54 @@ const Step1SetUp = ({ onStart }) => {
   // START INTERVIEW
   // ==========================================
 
-  const handleStart = () => {
-    // Role validation
+  const handleStart = async () => {
     if (!role.trim()) {
       alert("Please enter your role.");
       return;
     }
 
-    // Experience validation
     if (!experience.trim()) {
       alert("Please enter your experience.");
       return;
     }
 
-    // Resume analysis still running
     if (analyzing) {
-      alert(
-        "Please wait until resume analysis is completed."
-      );
-
+      alert("Please wait until resume analysis is completed.");
       return;
     }
 
-    // Send data to parent
-    onStart({
-      role,
-      experience,
-      interviewType,
-      resume,
+    try {
+      setLoading(true);
 
-      projects: analysisResult?.projects || [],
-      skills: analysisResult?.skills || [],
+      const result = await axios.post(
+        `${API_URL}/api/interview/generate-questions`,
+        {
+          role,
+          experience,
+          mode:interviewType,
+          projects: analysisResult?.projects || [],
+          skills: analysisResult?.skills || [],
+        },
+        {
+          withCredentials: true, 
+        }
+      );
 
-      analysisResult,
-    });
+      if (userData) {
+        dispatch(
+          setUserData({
+            ...userData,
+            credits: result.data.creditsLeft,
+          })
+        );
+      }
+
+      onStart(result.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -542,14 +561,13 @@ const Step1SetUp = ({ onStart }) => {
               transition
               mb-5
 
-              ${
-                analyzing
-                  ? `
+              ${analyzing
+                ? `
                     border-green-400
                     bg-green-50/30
                     cursor-wait
                   `
-                  : `
+                : `
                     border-gray-200
                     hover:border-green-400
                     hover:bg-green-50/30
@@ -838,6 +856,7 @@ const Step1SetUp = ({ onStart }) => {
             className="
               w-full
               h-12
+              cursor-pointer
               rounded-full
               bg-green-600
               hover:bg-green-700

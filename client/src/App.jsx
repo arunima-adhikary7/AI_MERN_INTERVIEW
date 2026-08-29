@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 import Auth from "./pages/Auth";
@@ -14,9 +14,10 @@ import Step2Interview from  "./components/Step2Interview";
 import Step3Interview from "./components/Step3Interview";
 import Pricing from "./components/Pricing";
 import Profile from "./components/Profile";
+import NotFound from "./pages/NotFound";
 
 function App() {
-
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   useEffect(() => {
 
@@ -52,9 +53,15 @@ function App() {
       <Route path="/signup" element={<Auth />} />
       <Route path="/profile" element={<Profile/>} />
       <Route path="/forgot-password" element={<Auth />} />
+      <Route path="*" element={<NotFound/>} />
       <Route path="/interview" element={<Interview />} />
       <Route path="/about" element={<About />} />
-      <Route path='/1' element={<Step1SetUp/>}/>
+      <Route path='/1' element={<Step1SetUp
+        onStart={(data) => {
+          console.log("Interview data:", data);
+          navigate("/2");
+        }}
+      />}/>
       <Route path='/2' element={<Step2Interview/>}/>
       <Route path='/3' element={<Step3Interview/>}/>
       <Route path='/4' element ={<Pricing/>}/>

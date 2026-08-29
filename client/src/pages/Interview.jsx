@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import {
     LuBot,
     LuSparkles,
@@ -21,24 +23,61 @@ const roles = [
 const levels = ["Beginner", "Intermediate", "Advanced"];
 
 export default function Interview() {
+    const navigate = useNavigate();
+
     const [role, setRole] = useState("");
     const [level, setLevel] = useState("Intermediate");
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
 
-    const startInterview = () => {
+    const startInterview = async () => {
         if (!role) return;
 
-        console.log({
-            role,
-            level,
-        });
+        try {
+            setLoading(true);
+            setError("");
 
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/api/interview/generate-questions`,
+                {
+                    role: role,
+                    experience: "2 years",
+                    mode: level,
+                    resumeTxt: "",
+                    projects: [],
+                    skills: [],
+                },
+                {
+                    withCredentials: true,
+                }
+            );
+
+            console.log("Interview response:", response.data);
+
+            // Move to interview page and pass generated data
+            navigate("/2", {
+                state: response.data,
+            });
+
+        } catch (err) {
+            console.error(
+                "Failed to start interview:",
+                err.response?.data || err.message
+            );
+
+            setError(
+                err.response?.data?.message ||
+                "Failed to start interview"
+            );
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
         <main className="min-h-screen bg-[#f7f7f6] px-5 py-16">
             <div className="mx-auto max-w-5xl">
 
-                {/* Header */}
                 <motion.div
                     initial={{ opacity: 0, y: 25 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -58,18 +97,21 @@ export default function Interview() {
                     </p>
                 </motion.div>
 
-                {/* Main Card */}
                 <motion.div
                     initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.7, delay: 0.15 }}
                     className="mt-12 rounded-[32px] border border-gray-200/70 bg-white p-6 shadow-[0_25px_70px_-30px_rgba(0,0,0,0.18)] md:p-10"
                 >
+
                     {/* Role */}
                     <div>
                         <div className="mb-5 flex items-center justify-between">
                             <div>
-                                <h2 className="text-lg font-semibold">Select role</h2>
+                                <h2 className="text-lg font-semibold">
+                                    Select role
+                                </h2>
+
                                 <p className="mt-1 text-sm text-gray-400">
                                     What are you preparing for?
                                 </p>
@@ -86,6 +128,7 @@ export default function Interview() {
                                 return (
                                     <button
                                         key={item.name}
+                                        type="button"
                                         onClick={() => setRole(item.name)}
                                         className={`flex items-center gap-3 rounded-2xl border p-4 text-left transition ${active
                                                 ? "border-green-400 bg-green-50"
@@ -113,7 +156,10 @@ export default function Interview() {
                     {/* Difficulty */}
                     <div className="mt-10">
                         <div className="mb-5">
-                            <h2 className="text-lg font-semibold">Difficulty</h2>
+                            <h2 className="text-lg font-semibold">
+                                Difficulty
+                            </h2>
+
                             <p className="mt-1 text-sm text-gray-400">
                                 Choose your interview level.
                             </p>
@@ -126,6 +172,7 @@ export default function Interview() {
                                 return (
                                     <button
                                         key={item}
+                                        type="button"
                                         onClick={() => setLevel(item)}
                                         className={`rounded-2xl border px-5 py-4 text-sm font-medium transition ${active
                                                 ? "border-green-400 bg-green-50 text-green-700"
@@ -142,6 +189,7 @@ export default function Interview() {
                     {/* Summary */}
                     <div className="mt-10 rounded-2xl bg-[#f8faf9] p-5">
                         <div className="flex items-center justify-between">
+
                             <div>
                                 <p className="text-xs uppercase tracking-wider text-gray-400">
                                     Interview
@@ -157,23 +205,33 @@ export default function Interview() {
                                     Level
                                 </p>
 
-                                <p className="mt-1 font-semibold">{level}</p>
+                                <p className="mt-1 font-semibold">
+                                    {level}
+                                </p>
                             </div>
+
                         </div>
                     </div>
 
+                    {/* Error */}
+                    {error && (
+                        <p className="mt-4 text-center text-sm text-red-500">
+                            {error}
+                        </p>
+                    )}
+
                     {/* Start */}
                     <button
+                        type="button"
                         onClick={startInterview}
-                        disabled={!role}
+                        disabled={!role || loading}
                         className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-black py-4 font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                        Start AI Interview
-                        <LuArrowRight size={19} />
+                        {loading ? "Generating Questions..." : "Start AI Interview"}
+                        {!loading && <LuArrowRight size={19} />}
                     </button>
                 </motion.div>
 
-                {/* Small info */}
                 <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}

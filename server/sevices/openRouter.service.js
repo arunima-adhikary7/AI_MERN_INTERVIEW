@@ -30,10 +30,10 @@ export const askAi = async (messages) => {
       }
     );
 
-    console.log(
-      "OpenRouter response:",
-      response.data
-    );
+    // console.log(
+    //   "OpenRouter response:",
+    //   response.data
+    // );
 
     const content =
       response?.data?.choices?.[0]?.message?.content;

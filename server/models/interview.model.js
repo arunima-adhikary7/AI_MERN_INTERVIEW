@@ -8,17 +8,17 @@ const questionSchema=new mongoose.Schema({
     feedback:String,
     score:{type:Number,default:0},
     confidence:{type:Number,default:0},
-    communication:{type:Number,default:0}
+    communication:{type:Number,default:0},
     correctness:{type:Number,default:0},
 })
 const interviewSchema=new mongoose.Schema({
 
-    userId;{
+    userId:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"User",
         required:true
     },
-    role{
+    role:{
         type:String,
         required:true
     },
@@ -28,7 +28,7 @@ const interviewSchema=new mongoose.Schema({
     },
     mode:{
         type:String,
-        enum:["HR","Technical"],
+        enum:["HR Interview","Technical Interview", "Behavioral Interview", "Mixed Interview"],
         required:true
     },
     resumeText:{
