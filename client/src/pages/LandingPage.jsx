@@ -90,10 +90,10 @@ export default function LandingPage() {
                                 Start AI Interview
                             </Link>
 
-                            <button className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-3.5 font-medium shadow-sm transition hover:bg-gray-50">
+                            {/* <button className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-3.5 font-medium shadow-sm transition hover:bg-gray-50">
                                 <FcGoogle size={20} />
                                 Continue with Google
-                            </button>
+                            </button> */}
                         </motion.div>
                     </motion.div>
 

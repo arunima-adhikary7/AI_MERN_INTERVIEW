@@ -50,7 +50,7 @@ const Step1SetUp = ({ onStart }) => {
     ];
 
     if (!allowedTypes.includes(file.type)) {
-      alert("Please upload a PDF, DOC, or DOCX file.");
+      alert("Please upload PDF file only.");
 
       e.target.value = "";
 
@@ -668,7 +668,7 @@ const Step1SetUp = ({ onStart }) => {
                     text-gray-600
                   "
                 >
-                  Click to upload resume (Optional)
+                  Click to upload resume
                 </span>
 
                 <p
@@ -678,7 +678,7 @@ const Step1SetUp = ({ onStart }) => {
                     mt-1
                   "
                 >
-                  PDF, DOC, DOCX • Max 5MB
+                  PDF • Max 5MB
                 </p>
 
               </div>
@@ -688,7 +688,7 @@ const Step1SetUp = ({ onStart }) => {
             <input
               id="resume"
               type="file"
-              accept=".pdf,.doc,.docx"
+              accept=".pdf"
               onChange={handleResumeChange}
               disabled={analyzing}
               className="hidden"
