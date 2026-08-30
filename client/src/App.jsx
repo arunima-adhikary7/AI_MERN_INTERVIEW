@@ -1,60 +1,69 @@
 import { useEffect } from "react";
-import { Route, Routes, useNavigate } from "react-router-dom";
+import {
+  Route,
+  Routes,
+  useNavigate,
+} from "react-router-dom";
 import axios from "axios";
+import { useDispatch } from "react-redux";
 
 import Auth from "./pages/Auth";
 import LandingPage from "./pages/LandingPage";
-import Interview from "./pages/Interview";
 import About from "./pages/About";
-import { setUserData } from "./redux/userSlice";
-import { useDispatch } from "react-redux";
-import Step1SetUp from "./components/Step1SetUp" 
-export const ServerURL = import.meta.env.VITE_API_URL;
-import Step2Interview from  "./components/Step2Interview";
+import Step1SetUp from "./components/Step1SetUp";
+import Step2Interview from "./components/Step2Interview";
 import Step3Interview from "./components/Step3Interview";
 import Pricing from "./components/Pricing";
 import Profile from "./components/Profile";
 import NotFound from "./pages/NotFound";
 
+import { setUserData } from "./redux/userSlice";
+
+export const ServerURL = import.meta.env.VITE_API_URL;
+
 function App() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  useEffect(() => {
 
+  useEffect(() => {
     const getUser = async () => {
       try {
-
         const result = await axios.get(
-          ServerURL + "/api/user/current-user",
+          `${ServerURL}/api/user/current-user`,
           {
-            withCredentials: true
+            withCredentials: true,
           }
-         
         );
-   dispatch(setUserData(result.data))
-        // console.log("Current user:", result.data);
 
+        dispatch(setUserData(result.data.user));
+
+        // console.log("Current user:", result.data.user);
       } catch (err) {
+        console.log(
+          "User not authenticated:",
+          err.response?.data?.message
+        );
 
-        console.error("Error fetching user:", err);
-         dispatch(setUserData(null))
-
+        dispatch(setUserData(null));
       }
     };
 
     getUser();
-
-  }, []);
+  }, [dispatch]);
 
   return (
     <Routes>
+      {/* Public */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Auth />} />
       <Route path="/signup" element={<Auth />} />
-      <Route path="/profile" element={<Profile />} />
       <Route path="/forgot-password" element={<Auth />} />
       <Route path="/about" element={<About />} />
 
+      {/* Profile */}
+      <Route path="/profile" element={<Profile />} />
+
+      {/* Interview Step 1 */}
       <Route
         path="/interview"
         element={
@@ -68,11 +77,29 @@ function App() {
         }
       />
 
-      <Route path="/2" element={<Step2Interview />} />
-      <Route path="/3" element={<Step3Interview />} />
-      <Route path="/4" element={<Pricing />} />
+      {/* Interview Step 2 */}
+      <Route
+        path="/2"
+        element={<Step2Interview />}
+      />
 
-      <Route path="*" element={<NotFound />} />
+      {/* Interview Step 3 */}
+      <Route
+        path="/3"
+        element={<Step3Interview />}
+      />
+
+      {/* Pricing */}
+      <Route
+        path="/4"
+        element={<Pricing />}
+      />
+
+      {/* 404 */}
+      <Route
+        path="*"
+        element={<NotFound />}
+      />
     </Routes>
   );
 }

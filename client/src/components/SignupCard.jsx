@@ -51,15 +51,16 @@ export default function SignupCard() {
         }
       );
 
-      console.log("Normal signup response:", result.data);
+      // console.log("Normal signup response:", result.data);
 
       // Backend stores JWT inside HTTP-only cookie.
       // No localStorage is required.
 
-      console.log("Signup successful");
+      // console.log("Signup successful");
 
       // Redirect after signup
       navigate("/");
+      window.location.reload();
 
     } catch (error) {
       console.error("Normal signup error:", error);
@@ -114,19 +115,19 @@ export default function SignupCard() {
         }
       );
 
-      console.log(
-        "Google signup response:",
-        result.data
-      );
+      // console.log(
+      //   "Google signup response:",
+      //   result.data
+      // );
 
       // Backend has already created the JWT
       // and stored it in an HTTP-only cookie.
 
-      console.log("Google signup successful");
+      // console.log("Google signup successful");
 
       // Redirect
       navigate("/");
-
+      window.location.reload();
     } catch (error) {
       console.error(
         "Google signup error:",

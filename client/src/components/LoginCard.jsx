@@ -45,7 +45,7 @@ export default function LoginCard() {
         }
       );
 
-      console.log("Login response:", result.data);
+      // console.log("Login response:", result.data);
 
       /*
         IMPORTANT:
@@ -59,8 +59,8 @@ export default function LoginCard() {
         Browser automatically stores the cookie.
       */
 
-      console.log("Login successful");
-      console.log("Authentication cookie received.");
+      // console.log("Login successful");
+      // console.log("Authentication cookie received.");
 
       navigate("/");
       window.location.reload();
@@ -142,16 +142,16 @@ export default function LoginCard() {
         inside an HTTP-only cookie.
       */
 
-      console.log(
-        "Google login successful"
-      );
+      // console.log(
+      //   "Google login successful"
+      // );
 
-      console.log(
-        "Authentication cookie received."
-      );
+      // console.log(
+      //   "Authentication cookie received."
+      // );
 
       navigate("/");
-
+      window.location.reload();
     } catch (error) {
       console.error(
         "Google login error:",
