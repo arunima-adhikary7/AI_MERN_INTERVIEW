@@ -282,7 +282,7 @@ export const generateQuestions = async (req, res) => {
     experience = experience?.trim();
     mode = mode?.trim();
 
-    if (!role || !experience || !mode){
+    if (!role || !experience || !mode) {
       console.log(role, experience, mode);
       return res.status(400).json({
         meessage: "role, experiencem, mode are required",
@@ -489,45 +489,61 @@ export const submitAnswer = async (req, res) => {
     question.correctness = parsed.correctness;
     question.score = parsed.finalScore;
     question.feedback = parsed.feedback;
-    await Interview.save();
+    await interview.save();
 
     return res.status(200).json({ feedback: parsed.feedback })
   } catch (error) {
-    return res.status(500).json({ message: `failed to submit answer ${ error }`})
+    return res.status(500).json({ message: `failed to submit answer ${error}` })
   }
 }
 
 
 export const finishInterview = async (req, res) => {
   try {
-    const { interviewId } = req.body
-    const interview = await Interview.findById(interviewId)
+    const { interviewId } = req.body;
+
+    const interview = await Interview.findById(interviewId);
+
     if (!interview) {
-      return res.status(400).json({ message: "failed to find Interview" })
+      return res.status(404).json({
+        message: "Interview not found",
+      });
     }
 
     const totalQuestions = interview.questions.length;
+
     let totalScore = 0;
     let totalConfidence = 0;
     let totalCommunication = 0;
     let totalCorrectness = 0;
+
+    // Calculate totals
     interview.questions.forEach((q) => {
       totalScore += q.score || 0;
       totalConfidence += q.confidence || 0;
       totalCommunication += q.communication || 0;
-    }); totalCorrectness += q.correctness || 0;
+      totalCorrectness += q.correctness || 0;
+    });
+
     const finalScore = totalQuestions
-      ? totalScore / totalQuestions : 0;
+      ? totalScore / totalQuestions
+      : 0;
+
     const avgConfidence = totalQuestions
       ? totalConfidence / totalQuestions
       : 0;
 
     const avgCommunication = totalQuestions
-      ? totalCommunication / totalQuestions : 0;
+      ? totalCommunication / totalQuestions
+      : 0;
+
     const avgCorrectness = totalQuestions
-      ? totalCorrectness / totalQuestions : 0;
+      ? totalCorrectness / totalQuestions
+      : 0;
+
     interview.finalScore = finalScore;
     interview.status = "completed";
+
     await interview.save();
 
     return res.status(200).json({
@@ -535,6 +551,7 @@ export const finishInterview = async (req, res) => {
       confidence: Number(avgConfidence.toFixed(1)),
       communication: Number(avgCommunication.toFixed(1)),
       correctness: Number(avgCorrectness.toFixed(1)),
+
       questionWiseScore: interview.questions.map((q) => ({
         question: q.question,
         score: q.score || 0,
@@ -543,9 +560,95 @@ export const finishInterview = async (req, res) => {
         communication: q.communication || 0,
         correctness: q.correctness || 0,
       })),
-    })
+    });
+
+  } catch (error) {
+    console.error("Finish interview error:", error);
+
+    return res.status(500).json({
+      message: error.message,
+    });
   }
-  catch (error) {
-    return res.status(500).json({ message: `failed to submit answer ${error}` })
+};
+export const getMyInterviews = async (req, res) => {
+  try {
+    const interviews = await Interview.find({
+      userId: req.userId,
+    })
+      .sort({ createdAt: -1 })
+      .select("role experience mode finalScore status createdAt");
+
+    return res.status(200).json(interviews);
+
+  } catch (error) {
+    console.error("Get my interviews error:", error);
+
+    return res.status(500).json({
+      message: "Failed to find current user's interviews",
+    });
+  }
+};
+
+export const getInterviewReport = async (req, res) => {
+  try {
+    const interview = await Interview.findOne({
+      _id: req.params.id,
+      userId: req.userId,
+    });
+
+    if (!interview) {
+      return res.status(404).json({
+        message: "Interview not found",
+      });
     }
-}
+
+    const totalQuestions = interview.questions.length;
+
+    let totalScore = 0;
+    let totalConfidence = 0;
+    let totalCommunication = 0;
+    let totalCorrectness = 0;
+
+    interview.questions.forEach((q) => {
+      totalScore += q.score || 0;
+      totalConfidence += q.confidence || 0;
+      totalCommunication += q.communication || 0;
+      totalCorrectness += q.correctness || 0;
+    });
+
+    const avgScore = totalQuestions
+      ? totalScore / totalQuestions
+      : 0;
+
+    const avgConfidence = totalQuestions
+      ? totalConfidence / totalQuestions
+      : 0;
+
+    const avgCommunication = totalQuestions
+      ? totalCommunication / totalQuestions
+      : 0;
+
+    const avgCorrectness = totalQuestions
+      ? totalCorrectness / totalQuestions
+      : 0;
+
+    return res.status(200).json({
+      interviewId: interview._id,
+      finalScore: Number(
+        (interview.finalScore ?? avgScore).toFixed(1)
+      ),
+      confidence: Number(avgConfidence.toFixed(1)),
+      communication: Number(avgCommunication.toFixed(1)),
+      correctness: Number(avgCorrectness.toFixed(1)),
+      questionWiseScore: interview.questions,
+    });
+
+  } catch (error) {
+    console.error("Get interview report error:", error);
+
+    return res.status(500).json({
+      message: "Failed to get interview report",
+      error: error.message,
+    });
+  }
+};

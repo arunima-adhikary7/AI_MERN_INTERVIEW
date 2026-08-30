@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { setUserData } from "../redux/userSlice";
+import { Loader2 } from "lucide-react";
 
 const Step1SetUp = ({ onStart }) => {
   const { userData } = useSelector((state) => state.user)
@@ -20,6 +21,7 @@ const Step1SetUp = ({ onStart }) => {
   const [experience, setExperience] = useState("");
   const [interviewType, setInterviewType] =
     useState("Technical Interview");
+  const [starting, setStarting] = useState(false);
 
   const [resume, setResume] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -88,8 +90,8 @@ const Step1SetUp = ({ onStart }) => {
     formData.append("resume", file);
 
     try {
-      console.log("Uploading resume...");
-      console.log("API URL:", API_URL);
+      // console.log("Uploading resume...");
+      // console.log("API URL:", API_URL);
 
       const result = await axios.post(
         `${API_URL}/api/interview/resume`,
@@ -103,10 +105,10 @@ const Step1SetUp = ({ onStart }) => {
         }
       );
 
-      console.log(
-        "Resume analysis response:",
-        result.data
-      );
+      // console.log(
+      //   "Resume analysis response:",
+      //   result.data
+      // );
 
       setAnalysisResult({
         projects: Array.isArray(result.data.projects)
@@ -174,19 +176,19 @@ const Step1SetUp = ({ onStart }) => {
     }
 
     try {
-      setLoading(true);
+      setStarting(true);
 
       const result = await axios.post(
         `${API_URL}/api/interview/generate-questions`,
         {
           role,
           experience,
-          mode:interviewType,
+          mode: interviewType,
           projects: analysisResult?.projects || [],
           skills: analysisResult?.skills || [],
         },
         {
-          withCredentials: true, 
+          withCredentials: true,
         }
       );
 
@@ -203,7 +205,7 @@ const Step1SetUp = ({ onStart }) => {
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
+      setStarting(false);
     }
   };
 
@@ -852,26 +854,37 @@ const Step1SetUp = ({ onStart }) => {
 
           <button
             onClick={handleStart}
-            disabled={analyzing}
+            disabled={analyzing || starting}
             className="
-              w-full
-              h-12
-              cursor-pointer
-              rounded-full
-              bg-green-600
-              hover:bg-green-700
-              disabled:bg-gray-400
-              disabled:cursor-not-allowed
-              text-white
-              font-semibold
-              transition
-              duration-300
-              shadow-md
-            "
+            w-full
+            h-12
+            cursor-pointer
+            rounded-full
+            bg-green-600
+            hover:bg-green-700
+            disabled:bg-gray-400
+            disabled:cursor-not-allowed
+            text-white
+            font-semibold
+            transition
+            duration-300
+            shadow-md
+            flex
+            items-center
+            justify-center
+            gap-2
+          "
           >
-            {analyzing
-              ? "Analyzing Resume..."
-              : "Start Interview"}
+            {starting ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Generating Interview...
+              </>
+            ) : analyzing ? (
+              "Analyzing Resume..."
+            ) : (
+              "Start Interview"
+            )}
           </button>
 
         </motion.div>

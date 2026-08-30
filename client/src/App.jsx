@@ -9,7 +9,7 @@ import About from "./pages/About";
 import { setUserData } from "./redux/userSlice";
 import { useDispatch } from "react-redux";
 import Step1SetUp from "./components/Step1SetUp" 
-export const ServerURL = "http://localhost:8000";
+export const ServerURL = import.meta.env.VITE_API_URL;
 import Step2Interview from  "./components/Step2Interview";
 import Step3Interview from "./components/Step3Interview";
 import Pricing from "./components/Pricing";
@@ -32,7 +32,7 @@ function App() {
          
         );
    dispatch(setUserData(result.data))
-        console.log("Current user:", result.data);
+        // console.log("Current user:", result.data);
 
       } catch (err) {
 
@@ -51,22 +51,28 @@ function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Auth />} />
       <Route path="/signup" element={<Auth />} />
-      <Route path="/profile" element={<Profile/>} />
+      <Route path="/profile" element={<Profile />} />
       <Route path="/forgot-password" element={<Auth />} />
-      <Route path="*" element={<NotFound/>} />
-      <Route path="/interview" element={<Interview />} />
       <Route path="/about" element={<About />} />
-      <Route path='/1' element={<Step1SetUp
-        onStart={(data) => {
-          console.log("Interview data:", data);
-          navigate("/2");
-        }}
-      />}/>
-      <Route path='/2' element={<Step2Interview/>}/>
-      <Route path='/3' element={<Step3Interview/>}/>
-      <Route path='/4' element ={<Pricing/>}/>
 
+      <Route
+        path="/interview"
+        element={
+          <Step1SetUp
+            onStart={(data) => {
+              navigate("/2", {
+                state: data,
+              });
+            }}
+          />
+        }
+      />
 
+      <Route path="/2" element={<Step2Interview />} />
+      <Route path="/3" element={<Step3Interview />} />
+      <Route path="/4" element={<Pricing />} />
+
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

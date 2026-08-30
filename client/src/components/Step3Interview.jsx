@@ -1,8 +1,8 @@
-
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Download,
+  Loader2,
 } from "lucide-react";
 
 import {
@@ -15,55 +15,21 @@ import {
   Tooltip,
 } from "recharts";
 
-import { useNavigate } from "react-router-dom";
+import {
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 
-const performanceData = [
-  {
-    question: "Q1",
-    score: 0,
-  },
-  {
-    question: "Q2",
-    score: 5,
-  },
-  {
-    question: "Q3",
-    score: 0,
-  },
-  {
-    question: "Q4",
-    score: 0,
-  },
-  {
-    question: "Q5",
-    score: 0,
-  },
-];
+import axios from "axios";
 
-const skills = [
-  {
-    name: "Confidence",
-    score: 1.6,
-  },
-  {
-    name: "Communication",
-    score: 2,
-  },
-  {
-    name: "Correctness",
-    score: 2,
-  },
-  {
-    name: "Technical Knowledge",
-    score: 2.5,
-  },
-];
+const API_URL = import.meta.env.VITE_API_URL;
 
 const getPerformanceMessage = (score) => {
   if (score >= 8) {
     return {
       title: "Excellent performance!",
-      description: "You demonstrated strong interview skills.",
+      description:
+        "You demonstrated strong interview skills.",
     };
   }
 
@@ -85,53 +51,166 @@ const getPerformanceMessage = (score) => {
 
   return {
     title: "Significant improvement required.",
-    description: "Work on clarity and confidence.",
+    description:
+      "Work on clarity, confidence and technical accuracy.",
   };
 };
 
 function Step3Interview() {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Change this to the actual interview score later
-  const overallScore = 1;
+  const interviewId = location.state?.interviewId;
 
-  const message = getPerformanceMessage(overallScore);
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // =====================================================
+  // FETCH INTERVIEW REPORT
+  // =====================================================
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    const fetchReport = async () => {
+      if (!interviewId) {
+        setError("Interview ID not found.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const result = await axios.get(
+          `${API_URL}/api/interview/report/${interviewId}`,
+          {
+            withCredentials: true,
+          }
+        );
+
+        // console.log("Interview report:", result.data);
+
+        setReport(result.data);
+      } catch (error) {
+        console.error(
+          "Failed to fetch interview report:",
+          error.response?.data || error.message
+        );
+
+        setError(
+          error.response?.data?.message ||
+          "Failed to load interview report."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReport();
+  }, [interviewId]);
+
+  // =====================================================
+  // LOADING
+  // =====================================================
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f4fbf8]">
+        <div className="flex items-center gap-3 text-gray-600">
+          <Loader2
+            size={22}
+            className="animate-spin"
+          />
+          Loading interview report...
+        </div>
+      </div>
+    );
+  }
+
+  // =====================================================
+  // ERROR
+  // =====================================================
+
+  if (error || !report) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f4fbf8] px-5">
+        <div className="bg-white rounded-3xl shadow-sm p-8 text-center max-w-md">
+          <h2 className="text-xl font-semibold text-gray-800">
+            Unable to load report
+          </h2>
+
+          <p className="mt-2 text-sm text-gray-500">
+            {error || "Report not found."}
+          </p>
+
+          <button
+            onClick={() => navigate("/")}
+            className="mt-6 rounded-xl bg-black px-5 py-3 text-sm font-semibold text-white"
+          >
+            Go Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // =====================================================
+  // REPORT DATA
+  // =====================================================
+
+  const overallScore = Number(report.finalScore || 0);
+
+  const message = getPerformanceMessage(
+    overallScore
+  );
+
+  const skills = [
+    {
+      name: "Confidence",
+      score: Number(report.confidence || 0),
+    },
+    {
+      name: "Communication",
+      score: Number(report.communication || 0),
+    },
+    {
+      name: "Correctness",
+      score: Number(report.correctness || 0),
+    },
+  ];
+
+  const performanceData = (
+    report.questionWiseScore || []
+  ).map((item, index) => ({
+    question: `Q${index + 1}`,
+    score: Number(item.score || 0),
+  }));
+
+  // =====================================================
+  // DOWNLOAD
+  // =====================================================
 
   const handleDownloadPDF = () => {
     window.print();
   };
 
+  // =====================================================
+  // RETURN
+  // =====================================================
+
   return (
     <div className="min-h-screen bg-[#f4fbf8] text-[#172126]">
 
-      {/* ================= HEADER ================= */}
+      {/* HEADER */}
       <header className="px-6 md:px-10 lg:px-14 pt-8 pb-6">
-
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
 
-          {/* LEFT HEADER */}
           <div className="flex items-start gap-5">
 
-            {/* Back Button */}
             <button
               onClick={() => navigate(-1)}
-              className="
-                mt-1
-                w-12
-                h-12
-                rounded-full
-                bg-white
-                shadow-sm
-                border
-                border-gray-100
-                flex
-                items-center
-                justify-center
-                hover:bg-gray-50
-                transition
-              "
+              className="mt-1 w-12 h-12 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition"
             >
-              <ArrowLeft size={23} strokeWidth={2} />
+              <ArrowLeft size={23} />
             </button>
 
             <div>
@@ -146,24 +225,9 @@ function Step3Interview() {
 
           </div>
 
-          {/* DOWNLOAD PDF */}
           <button
             onClick={handleDownloadPDF}
-            className="
-              bg-[#08a878]
-              hover:bg-[#078f67]
-              text-white
-              px-7
-              py-4
-              rounded-2xl
-              font-semibold
-              flex
-              items-center
-              justify-center
-              gap-3
-              shadow-sm
-              transition
-            "
+            className="bg-[#08a878] hover:bg-[#078f67] text-white px-7 py-4 rounded-2xl font-semibold flex items-center justify-center gap-3 shadow-sm transition"
           >
             <Download size={20} />
             Download PDF
@@ -172,41 +236,27 @@ function Step3Interview() {
         </div>
       </header>
 
-      {/* ================= MAIN ================= */}
+      {/* MAIN */}
       <main className="px-5 md:px-8 lg:px-10 pb-12">
 
         <div className="grid grid-cols-1 xl:grid-cols-[525px_1fr] gap-7">
 
-          {/* ================================================= */}
           {/* LEFT COLUMN */}
-          {/* ================================================= */}
           <div className="space-y-7">
 
-            {/* ================= OVERALL PERFORMANCE ================= */}
-            <section
-              className="
-                bg-white
-                rounded-[26px]
-                shadow-[0_8px_30px_rgba(0,0,0,0.07)]
-                px-8
-                py-9
-                text-center
-              "
-            >
+            {/* OVERALL PERFORMANCE */}
+            <section className="bg-white rounded-[26px] shadow-[0_8px_30px_rgba(0,0,0,0.07)] px-8 py-9 text-center">
 
               <h2 className="text-lg font-medium text-gray-600 mb-7">
                 Overall Performance
               </h2>
 
-              {/* CIRCULAR SCORE */}
               <div className="relative w-32 h-32 mx-auto">
 
                 <svg
                   viewBox="0 0 120 120"
                   className="w-full h-full -rotate-90"
                 >
-
-                  {/* Background Circle */}
                   <circle
                     cx="60"
                     cy="60"
@@ -216,7 +266,6 @@ function Step3Interview() {
                     strokeWidth="8"
                   />
 
-                  {/* Progress Circle */}
                   <circle
                     cx="60"
                     cy="60"
@@ -225,21 +274,13 @@ function Step3Interview() {
                     stroke="#10b981"
                     strokeWidth="8"
                     strokeLinecap="round"
-                    strokeDasharray={`${(overallScore / 10) * 289} 289`}
+                    strokeDasharray={`${(overallScore / 10) * 289
+                      } 289`}
                   />
-
                 </svg>
 
-                <div
-                  className="
-                    absolute
-                    inset-0
-                    flex
-                    items-center
-                    justify-center
-                  "
-                >
-                  <span className="text-lg font-medium text-red-400">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-lg font-medium text-green-600">
                     {overallScore}/10
                   </span>
                 </div>
@@ -260,16 +301,8 @@ function Step3Interview() {
 
             </section>
 
-            {/* ================= SKILL EVALUATION ================= */}
-            <section
-              className="
-                bg-white
-                rounded-[26px]
-                shadow-[0_8px_30px_rgba(0,0,0,0.07)]
-                px-8
-                py-8
-              "
-            >
+            {/* SKILLS */}
+            <section className="bg-white rounded-[26px] shadow-[0_8px_30px_rgba(0,0,0,0.07)] px-8 py-8">
 
               <h2 className="text-xl font-semibold mb-8">
                 Skill Evaluation
@@ -278,14 +311,13 @@ function Step3Interview() {
               <div className="space-y-6">
 
                 {skills.map((skill) => {
-
-                  const percentage = (skill.score / 10) * 100;
+                  const percentage =
+                    (skill.score / 10) * 100;
 
                   return (
                     <div key={skill.name}>
 
                       <div className="flex items-center justify-between mb-2">
-
                         <span className="text-base font-medium">
                           {skill.name}
                         </span>
@@ -293,24 +325,15 @@ function Step3Interview() {
                         <span className="text-[#10a875] font-semibold">
                           {skill.score}
                         </span>
-
                       </div>
 
                       <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-
                         <div
-                          className="
-                            h-full
-                            bg-[#0ac878]
-                            rounded-full
-                            transition-all
-                            duration-700
-                          "
+                          className="h-full bg-[#0ac878] rounded-full transition-all duration-700"
                           style={{
                             width: `${percentage}%`,
                           }}
                         />
-
                       </div>
 
                     </div>
@@ -323,20 +346,11 @@ function Step3Interview() {
 
           </div>
 
-          {/* ================================================= */}
           {/* RIGHT COLUMN */}
-          {/* ================================================= */}
           <div className="space-y-7">
 
-            {/* ================= PERFORMANCE TREND ================= */}
-            <section
-              className="
-                bg-white
-                rounded-[26px]
-                shadow-[0_8px_30px_rgba(0,0,0,0.07)]
-                p-7
-              "
-            >
+            {/* PERFORMANCE TREND */}
+            <section className="bg-white rounded-[26px] shadow-[0_8px_30px_rgba(0,0,0,0.07)] p-7">
 
               <h2 className="text-xl font-semibold mb-5">
                 Performance Trend
@@ -348,7 +362,6 @@ function Step3Interview() {
                   width="100%"
                   height="100%"
                 >
-
                   <AreaChart
                     data={performanceData}
                     margin={{
@@ -358,32 +371,6 @@ function Step3Interview() {
                       bottom: 5,
                     }}
                   >
-
-                    <defs>
-
-                      <linearGradient
-                        id="performanceGradient"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-
-                        <stop
-                          offset="0%"
-                          stopColor="#16c784"
-                          stopOpacity={0.25}
-                        />
-
-                        <stop
-                          offset="100%"
-                          stopColor="#16c784"
-                          stopOpacity={0.02}
-                        />
-
-                      </linearGradient>
-
-                    </defs>
 
                     <CartesianGrid
                       stroke="#d9dfdc"
@@ -396,21 +383,11 @@ function Step3Interview() {
                         fill: "#6b7280",
                         fontSize: 14,
                       }}
-                      axisLine={{
-                        stroke: "#9ca3af",
-                      }}
                     />
 
                     <YAxis
                       domain={[0, 10]}
                       ticks={[0, 3, 6, 10]}
-                      tick={{
-                        fill: "#6b7280",
-                        fontSize: 14,
-                      }}
-                      axisLine={{
-                        stroke: "#9ca3af",
-                      }}
                     />
 
                     <Tooltip />
@@ -422,28 +399,40 @@ function Step3Interview() {
                       strokeWidth={3}
                       fill="url(#performanceGradient)"
                       dot={false}
-                      activeDot={{
-                        r: 5,
-                      }}
+                      activeDot={{ r: 5 }}
                     />
 
-                  </AreaChart>
+                    <defs>
+                      <linearGradient
+                        id="performanceGradient"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="0%"
+                          stopColor="#16c784"
+                          stopOpacity={0.25}
+                        />
 
+                        <stop
+                          offset="100%"
+                          stopColor="#16c784"
+                          stopOpacity={0.02}
+                        />
+                      </linearGradient>
+                    </defs>
+
+                  </AreaChart>
                 </ResponsiveContainer>
 
               </div>
 
             </section>
 
-            {/* ================= AI INSIGHTS ================= */}
-            <section
-              className="
-                bg-white
-                rounded-[26px]
-                shadow-[0_8px_30px_rgba(0,0,0,0.07)]
-                p-7
-              "
-            >
+            {/* AI INSIGHTS */}
+            <section className="bg-white rounded-[26px] shadow-[0_8px_30px_rgba(0,0,0,0.07)] p-7">
 
               <h2 className="text-xl font-semibold mb-5">
                 AI Performance Insights
@@ -451,47 +440,38 @@ function Step3Interview() {
 
               <div className="grid md:grid-cols-2 gap-5">
 
-                {/* STRENGTH */}
                 <div className="rounded-2xl bg-[#effbf6] p-5">
-
                   <p className="text-sm font-semibold text-[#079669] mb-2">
                     Strengths
                   </p>
 
                   <p className="text-gray-600 leading-7">
-                    You maintained a reasonable level of communication
-                    throughout the interview.
+                    {report.communication >= report.confidence
+                      ? "Your communication was one of your stronger areas."
+                      : "You demonstrated reasonable confidence during the interview."}
                   </p>
-
                 </div>
 
-                {/* IMPROVEMENT */}
                 <div className="rounded-2xl bg-[#fff8ed] p-5">
-
                   <p className="text-sm font-semibold text-orange-500 mb-2">
                     Areas to Improve
                   </p>
 
                   <p className="text-gray-600 leading-7">
-                    Focus on improving confidence, clarity and technical
-                    accuracy in your answers.
+                    {report.correctness < 5
+                      ? "Focus on improving technical accuracy and completeness."
+                      : report.confidence < 5
+                        ? "Focus on delivering answers with more confidence and structure."
+                        : "Continue practicing to make your answers more precise."}
                   </p>
-
                 </div>
 
               </div>
 
             </section>
 
-            {/* ================= QUESTIONS & SCORES ================= */}
-            <section
-              className="
-                bg-white
-                rounded-[26px]
-                shadow-[0_8px_30px_rgba(0,0,0,0.07)]
-                p-7
-              "
-            >
+            {/* QUESTIONS */}
+            <section className="bg-white rounded-[26px] shadow-[0_8px_30px_rgba(0,0,0,0.07)] p-7">
 
               <h2 className="text-xl font-semibold mb-6">
                 Questions & Scores
@@ -499,91 +479,63 @@ function Step3Interview() {
 
               <div className="space-y-3">
 
-                {performanceData.map((item, index) => (
+                {(report.questionWiseScore || []).map(
+                  (item, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between rounded-2xl bg-[#f7faf9] px-5 py-4 border border-gray-100 hover:bg-[#f1faf6] transition"
+                    >
 
-                  <div
-                    key={item.question}
-                    className="
-                      flex
-                      items-center
-                      justify-between
-                      rounded-2xl
-                      bg-[#f7faf9]
-                      px-5
-                      py-4
-                      border
-                      border-gray-100
-                      hover:bg-[#f1faf6]
-                      transition
-                    "
-                  >
+                      <div className="flex items-center gap-4 min-w-0">
 
-                    {/* QUESTION */}
-                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-[#e9f9f3] text-[#08a878] flex items-center justify-center font-semibold shrink-0">
+                          {index + 1}
+                        </div>
 
-                      <div
-                        className="
-                          w-10
-                          h-10
-                          rounded-full
-                          bg-[#e9f9f3]
-                          text-[#08a878]
-                          flex
-                          items-center
-                          justify-center
-                          font-semibold
-                          shrink-0
-                        "
-                      >
-                        {index + 1}
-                      </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-800">
+                            Question {index + 1}
+                          </p>
 
-                      <div>
+                          <p className="text-sm text-gray-500 truncate">
+                            {item.question}
+                          </p>
 
-                        <p className="font-medium text-gray-800">
-                          Question {index + 1}
-                        </p>
-
-                        <p className="text-sm text-gray-500">
-                          {item.question}
-                        </p>
+                          {item.feedback && (
+                            <p className="text-xs text-gray-400 mt-1">
+                              {item.feedback}
+                            </p>
+                          )}
+                        </div>
 
                       </div>
 
-                    </div>
+                      <div className="text-right ml-4 shrink-0">
+                        <p className="text-lg font-bold text-[#08a878]">
+                          {item.score || 0}/10
+                        </p>
 
-                    {/* SCORE */}
-                    <div className="text-right">
-
-                      <p className="text-lg font-bold text-[#08a878]">
-                        {item.score}/10
-                      </p>
-
-                      <p className="text-xs text-gray-400">
-                        Score
-                      </p>
+                        <p className="text-xs text-gray-400">
+                          Score
+                        </p>
+                      </div>
 
                     </div>
-
-                  </div>
-
-                ))}
+                  )
+                )}
 
               </div>
 
             </section>
 
           </div>
-
         </div>
-
       </main>
 
-      {/* ================= PRINT STYLES ================= */}
+      {/* PRINT */}
       <style>
         {`
           @media print {
-
             body {
               background: white !important;
             }
@@ -596,7 +548,6 @@ function Step3Interview() {
               box-shadow: none !important;
               break-inside: avoid;
             }
-
           }
         `}
       </style>
@@ -606,4 +557,3 @@ function Step3Interview() {
 }
 
 export default Step3Interview;
-
