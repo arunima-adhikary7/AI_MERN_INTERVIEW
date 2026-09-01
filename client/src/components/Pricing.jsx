@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { ArrowLeft, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
+import { useDispatch } from "react-redux";
+import { setUserData } from "../redux/userSlice";
+import axios from "axios";
+const ServerURL = import.meta.env.VITE_API_URL;
 const plans = [
   {
     id: "free",
@@ -51,13 +54,104 @@ const plans = [
 export default function Pricing() {
   const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState("starter");
+  const dispatch = useDispatch();
+  const [loadingPlan, setLoadingPlan] = useState(null);
 
-  const handlePayment = () => {
-    const plan = plans.find((item) => item.id === selectedPlan);
+  const handlePayment = async (plan) => {
+    if (plan.id === "free") {
+      return;
+    }
 
-    console.log("Selected plan:", plan);
+    try {
+      setLoadingPlan(plan.id);
 
-    // Connect Razorpay / Stripe here
+      const amount =
+        plan.id === "starter"
+          ? 100
+          : plan.id === "pro"
+            ? 500
+            : 0;
+
+      const credits =
+        plan.id === "starter"
+          ? 150
+          : plan.id === "pro"
+            ? 650
+            : 0;
+
+      // Create order
+      const result = await axios.post(
+        `${ServerURL}/api/payment/order`,
+        {
+          planId: plan.id,
+          amount,
+          credits,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
+      const order = result.data;
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: order.amount,
+        currency: "INR",
+        name: "InterviewIQ.AI",
+        description: `${plan.name} ${credits} Credits`,
+        order_id: order.id,
+
+        handler: async function (response) {
+          try {
+            console.log("Razorpay success response:", response);
+
+            const verifyPay = await axios.post(
+              `${ServerURL}/api/payment/verify`,
+              response,
+              {
+                withCredentials: true,
+              }
+            );
+
+            console.log("Backend verification:", verifyPay.data);
+
+            if (verifyPay.data.success) {
+              dispatch(setUserData(verifyPay.data.user));
+
+              alert("Payment successful!");
+              navigate("/");
+            } else {
+              alert("Payment verification failed!");
+            }
+          } catch (error) {
+            console.error("Payment verification failed:", error);
+            alert("Payment verification failed!");
+          }
+        },
+
+        theme: {
+          color: "#10b981",
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+
+      razorpay.on("payment.failed", (response) => {
+        console.error("Payment failed:", response.error);
+        alert("Payment failed");
+      });
+
+      razorpay.open();
+    } catch (error) {
+      console.error("Payment error:", error);
+      alert(
+        error.response?.data?.message ||
+        "Something went wrong while creating payment"
+      );
+    } finally {
+      setLoadingPlan(null);
+    }
   };
 
   return (
@@ -91,11 +185,10 @@ export default function Pricing() {
               <div
                 key={plan.id}
                 onClick={() => setSelectedPlan(plan.id)}
-                className={`relative flex cursor-pointer flex-col rounded-[28px] bg-white p-7 transition-all duration-300 ${
-                  selected
+                className={`relative flex cursor-pointer flex-col rounded-[28px] bg-white p-7 transition-all duration-300 ${selected
                     ? "border border-emerald-300 shadow-[0_15px_40px_-15px_rgba(16,185,129,0.28)]"
                     : "border border-transparent shadow-[0_8px_30px_-18px_rgba(0,0,0,0.18)] hover:-translate-y-1 hover:shadow-lg"
-                }`}
+                  }`}
               >
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -148,15 +241,17 @@ export default function Pricing() {
 
                 {/* Button */}
                 <button
-                  onClick={(e) => {
+                  onClick={(e) => {                    
                     e.stopPropagation();
-                    setSelectedPlan(plan.id);
+                    if (!selected)
+                      setSelectedPlan(plan.id);
+                    else
+                      handlePayment(plan)
                   }}
-                  className={`mt-8 w-full rounded-xl py-3.5 text-sm font-semibold transition ${
-                    selected
+                  className={`mt-8 w-full rounded-xl py-3.5 text-sm font-semibold transition ${selected
                       ? "bg-emerald-600 text-white hover:bg-emerald-700"
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  }`}
+                    }`}
                 >
                   {selected ? "Proceed to Pay" : "Select Plan"}
                 </button>

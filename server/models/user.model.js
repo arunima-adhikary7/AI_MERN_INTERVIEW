@@ -15,7 +15,10 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
-
+    credits: {
+      type: Number,
+      default: 100
+    },
     password: {
       type: String,
       required: function () {

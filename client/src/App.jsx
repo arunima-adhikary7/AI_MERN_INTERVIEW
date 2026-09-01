@@ -91,7 +91,7 @@ function App() {
 
       {/* Pricing */}
       <Route
-        path="/4"
+        path="/payment"
         element={<Pricing />}
       />
 

@@ -1,10 +1,10 @@
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { LuBot, LuLogIn, LuUserPlus, LuUser } from "react-icons/lu";
 
 export default function Navbar() {
     const { userData } = useSelector((state) => state.user);
-
+    const navigate = useNavigate();
     return (
         <nav className="sticky top-0 z-50 border-b border-gray-200 bg-white/90 backdrop-blur">
             <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
@@ -61,22 +61,28 @@ export default function Navbar() {
 
                 {/* Auth */}
                 {userData ? (
-                    <Link
-                        to="/profile"
-                        className="flex items-center justify-center"
-                    >
-                        {userData.profileImage ? (
-                            <img
-                                src={userData.profileImage}
-                                alt="Profile"
-                                className="h-10 w-10 rounded-full border border-gray-200 object-cover"
-                            />
-                        ) : (
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-500">
-                                <LuUser size={20} />
-                            </div>
-                        )}
-                    </Link>
+                    <div className="flex items-center gap-7">
+                        <div className="flex items-center gap-2">
+                            <p className="font-extraligh text-gray-500">Credits:</p>
+                            <span onClick={() => navigate("/payment")} className="font-semibold text-green-800 rounded-full px-3 py-1 bg-green-200 hover:bg-green-300 duration-100 cursor-pointer">{userData.credits}</span>
+                        </div>
+                        <Link
+                            to="/profile"
+                            className="flex items-center justify-center"
+                        >
+                            {userData.profileImage ? (
+                                <img
+                                    src={userData.profileImage}
+                                    alt="Profile"
+                                    className="h-10 w-10 rounded-full border border-gray-200 object-cover"
+                                />
+                            ) : (
+                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-500">
+                                    <LuUser size={20} />
+                                </div>
+                            )}
+                        </Link>
+                    </div>
                 ) : (
                     <div className="flex items-center gap-3">
                         <Link
