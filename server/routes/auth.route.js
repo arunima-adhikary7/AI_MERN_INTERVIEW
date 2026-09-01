@@ -22,7 +22,7 @@ authRouter.post("/login", login);
 authRouter.post("/google", googleAuth);
 
 // Logout
-authRouter.post("/logout", logout);
+authRouter.get("/logout", logout);
 
 export default authRouter;
 

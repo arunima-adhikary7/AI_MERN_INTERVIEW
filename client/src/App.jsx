@@ -10,6 +10,7 @@ import { useDispatch } from "react-redux";
 import Auth from "./pages/Auth";
 import LandingPage from "./pages/LandingPage";
 import About from "./pages/About";
+
 import Step1SetUp from "./components/Step1SetUp";
 import Step2Interview from "./components/Step2Interview";
 import Step3Interview from "./components/Step3Interview";
@@ -25,6 +26,10 @@ function App() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  // =====================================================
+  // GET CURRENT USER
+  // =====================================================
+
   useEffect(() => {
     const getUser = async () => {
       try {
@@ -36,8 +41,6 @@ function App() {
         );
 
         dispatch(setUserData(result.data.user));
-
-        // console.log("Current user:", result.data.user);
       } catch (err) {
         console.log(
           "User not authenticated:",
@@ -53,17 +56,45 @@ function App() {
 
   return (
     <Routes>
-      {/* Public */}
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<Auth />} />
-      <Route path="/signup" element={<Auth />} />
-      <Route path="/forgot-password" element={<Auth />} />
-      <Route path="/about" element={<About />} />
 
-      {/* Profile */}
-      <Route path="/profile" element={<Profile />} />
+      {/* ================= PUBLIC ================= */}
 
-      {/* Interview Step 1 */}
+      <Route
+        path="/"
+        element={<LandingPage />}
+      />
+
+      <Route
+        path="/login"
+        element={<Auth />}
+      />
+
+      <Route
+        path="/signup"
+        element={<Auth />}
+      />
+
+      <Route
+        path="/forgot-password"
+        element={<Auth />}
+      />
+
+      <Route
+        path="/about"
+        element={<About />}
+      />
+
+
+      {/* ================= PROFILE ================= */}
+
+      <Route
+        path="/profile"
+        element={<Profile />}
+      />
+
+
+      {/* ================= INTERVIEW STEP 1 ================= */}
+
       <Route
         path="/interview"
         element={
@@ -77,29 +108,46 @@ function App() {
         }
       />
 
-      {/* Interview Step 2 */}
+
+      {/* ================= INTERVIEW STEP 2 ================= */}
+
       <Route
         path="/2"
         element={<Step2Interview />}
       />
 
-      {/* Interview Step 3 */}
+
+      {/* ================= INTERVIEW STEP 3 ================= */}
+
       <Route
         path="/3"
         element={<Step3Interview />}
       />
 
-      {/* Pricing */}
+
+      {/* ================= INTERVIEW REPORT ================= */}
+
+      <Route
+        path="/interview/report"
+        element={<Step3Interview />}
+      />
+
+
+      {/* ================= PAYMENT ================= */}
+
       <Route
         path="/payment"
         element={<Pricing />}
       />
 
-      {/* 404 */}
+
+      {/* ================= 404 ================= */}
+
       <Route
         path="*"
         element={<NotFound />}
       />
+
     </Routes>
   );
 }
