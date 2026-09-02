@@ -177,7 +177,10 @@ const Step1SetUp = ({ onStart }) => {
 
     try {
       setStarting(true);
-
+      if (userData.credits<50){
+        alert("Not enough credits. Minimum 50 credits required");
+        return;
+      }
       const result = await axios.post(
         `${API_URL}/api/interview/generate-questions`,
         {

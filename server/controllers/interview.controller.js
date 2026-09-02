@@ -4,6 +4,7 @@ import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 import { askAi } from '../sevices/openRouter.service.js';
 import User from "../models/user.model.js";
 import Interview from "../models/interview.model.js";
+import { error } from "console";
 export const analyzeResume = async (req, res) => {
   let filePath = null;
 
@@ -292,7 +293,7 @@ export const generateQuestions = async (req, res) => {
     if (!user)
       return res.status(404).json({ message: "user not found" });
     if (user.credits < 50)
-      return res.status().json({ message: "Not enough credits. Minimum 50 credits required" });
+      return res.status(400).json({ message: "Not enough credits. Minimum 50 credits required" });
 
     const projectText = Array.isArray(projects) && projects.length
       ? projects.join(", ")
