@@ -13,9 +13,13 @@ dotenv.config();
 const app = express();
 
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: [
+        "http://localhost:5173",
+        "https://ai-mern-interview.vercel.app"
+    ],
     credentials: true
-}))
+}));
+
 app.use(express.json());
 app.use(cookieParser());
 
