@@ -246,22 +246,22 @@ const Step2Interview = () => {
   // CHECK INTERVIEW DATA
   // =========================================================
 
-  // useEffect(() => {
-  //   if (
-  //     !interviewData ||
-  //     !interviewId ||
-  //     !questions.length
-  //   ) {
-  //     navigate("/interview", {
-  //       replace: true,
-  //     });
-  //   }
-  // }, [
-  //   interviewData,
-  //   interviewId,
-  //   questions.length,
-  //   navigate,
-  // ]);
+  useEffect(() => {
+    if (
+      !interviewData ||
+      !interviewId ||
+      !questions.length
+    ) {
+      navigate("/interview", {
+        replace: true,
+      });
+    }
+  }, [
+    interviewData,
+    interviewId,
+    questions.length,
+    navigate,
+  ]);
 
 
   // =========================================================
@@ -1057,40 +1057,29 @@ const Step2Interview = () => {
             {/* AI INTERVIEWER */}
 
             <InterviewerPanel
-              interviewerMode={
-                interviewerMode
-              }
+              interviewerMode={interviewerMode}
 
               avatar={avatar}
 
-              isSpeaking={
-                isSpeaking
-              }
+              isSpeaking={isSpeaking}
 
-              voiceEnabled={
-                voiceEnabled
-              }
+              voiceEnabled={voiceEnabled}
 
               onToggleVoice={() => {
+                const nextValue = !voiceEnabled;
 
-                const nextValue =
-                  !voiceEnabled;
+                setVoiceEnabled(nextValue);
 
-
-                setVoiceEnabled(
-                  nextValue
-                );
-
-
-                // Turn AI voice off.
                 if (!nextValue) {
-
                   window.speechSynthesis?.cancel();
-
-                  setIsSpeaking(
-                    false
-                  );
+                  setIsSpeaking(false);
                 }
+              }}
+
+              showAvatar={showAvatar}
+
+              onToggleAvatar={() => {
+                setShowAvatar((previous) => !previous);
               }}
             />
 
