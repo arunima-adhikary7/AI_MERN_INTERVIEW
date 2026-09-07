@@ -398,6 +398,239 @@ export const generateQuestions = async (req, res) => {
   }
 };
 
+export const generateTopicQuestions = async (req, res) => {
+  try {
+    const {
+      topic,
+      interviewType,
+      difficulty,
+      questionCount,
+      timePerQuestion,
+      customInstructions,
+    } = req.body;
+
+    // ==============================
+    // VALIDATION
+    // ==============================
+
+    const cleanTopic = topic?.trim();
+    const cleanType = interviewType?.trim();
+    const cleanDifficulty = difficulty?.trim();
+
+    if (!cleanTopic || !cleanType || !cleanDifficulty) {
+      return res.status(400).json({
+        message: "Topic, interview type and difficulty are required.",
+      });
+    }
+
+    // ==============================
+    // USER
+    // ==============================
+
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found.",
+      });
+    }
+
+    if (user.credits < 50) {
+      return res.status(400).json({
+        message: "Not enough credits. Minimum 50 credits required.",
+      });
+    }
+
+    // ==============================
+    // CONFIGURATION
+    // ==============================
+
+    const count = Number(questionCount) || 10;
+    const time = Number(timePerQuestion) || 60;
+
+    if (count < 1 || count > 20) {
+      return res.status(400).json({
+        message: "Question count must be between 1 and 20.",
+      });
+    }
+
+    if (![30, 60, 90, 120].includes(time)) {
+      return res.status(400).json({
+        message: "Invalid time per question.",
+      });
+    }
+
+    // ==============================
+    // MAP INTERVIEW TYPE
+    // ==============================
+
+    const modeMap = {
+      Technical: "Technical Interview",
+      HR: "HR Interview",
+      Behavioral: "Behavioral Interview",
+      "System Design": "Technical Interview",
+      "General Knowledge": "Mixed Interview",
+      Custom: "Mixed Interview",
+    };
+
+    const mode = modeMap[cleanType];
+
+    if (!mode) {
+      return res.status(400).json({
+        message: "Invalid interview type.",
+      });
+    }
+
+    // ==============================
+    // AI PROMPT
+    // ==============================
+
+    const userPrompt = `
+Topic: ${cleanTopic}
+
+Interview Type: ${cleanType}
+
+Difficulty: ${cleanDifficulty}
+
+Number of Questions: ${count}
+
+Time Per Question: ${time} seconds
+
+Additional Instructions:
+${customInstructions?.trim() || "None"}
+`;
+
+    const messages = [
+      {
+        role: "system",
+        content: `
+You are a professional AI interviewer.
+
+The candidate has selected an arbitrary topic for an interview.
+
+The topic can be anything, including:
+programming, Docker, CI/CD, Git, DSA, Machine Learning,
+networking, mathematics, history, gaming, Valorant,
+general knowledge, or any other valid subject.
+
+Generate exactly ${count} interview questions about the requested topic.
+
+Interview Type:
+${cleanType}
+
+Difficulty:
+${cleanDifficulty}
+
+Rules:
+- Questions must be directly related to the topic.
+- Match the requested difficulty.
+- Make questions practical and interview-like.
+- Do not provide answers.
+- Do not provide explanations.
+- Do not number the questions.
+- Return exactly one question per line.
+- Do not add introductory or concluding text.
+- Keep questions clear and natural.
+        `,
+      },
+      {
+        role: "user",
+        content: userPrompt,
+      },
+    ];
+
+    // ==============================
+    // CALL AI
+    // ==============================
+
+    const aiResponse = await askAi(messages);
+
+    if (!aiResponse || !aiResponse.trim()) {
+      return res.status(500).json({
+        message: "AI returned an empty response.",
+      });
+    }
+
+    // ==============================
+    // PARSE QUESTIONS
+    // ==============================
+
+    const questionsArray = aiResponse
+      .split("\n")
+      .map((q) =>
+        q
+          .trim()
+          .replace(/^\d+[\).\-\s]+/, "")
+          .trim()
+      )
+      .filter((q) => q.length > 0)
+      .slice(0, count);
+
+    if (questionsArray.length === 0) {
+      return res.status(500).json({
+        message: "AI failed to generate questions.",
+      });
+    }
+
+    // ==============================
+    // DEDUCT CREDITS
+    // ==============================
+
+    user.credits -= 50;
+    await user.save();
+
+    // ==============================
+    // CREATE INTERVIEW
+    // ==============================
+
+    const interview = await Interview.create({
+      userId: user._id,
+
+      // Store topic in role field
+      role: cleanTopic,
+
+      // Store difficulty in experience field
+      experience: cleanDifficulty,
+
+      // Must match schema enum
+      mode: mode,
+
+      // Schema field is resumeText
+      resumeText: "",
+
+      questions: questionsArray.map((question) => ({
+        question,
+        difficulty: cleanDifficulty,
+        timeLimit: time,
+      })),
+    });
+
+    // ==============================
+    // RESPONSE
+    // ==============================
+
+    return res.status(200).json({
+      interviewId: interview._id,
+      creditsLeft: user.credits,
+      userName: user.name,
+      questions: interview.questions,
+
+      topic: cleanTopic,
+      interviewType: cleanType,
+      difficulty: cleanDifficulty,
+      questionCount: questionsArray.length,
+      timePerQuestion: time,
+    });
+
+  } catch (error) {
+    console.error("Topic interview generation error:", error);
+
+    return res.status(500).json({
+      message:
+        error.message || "Failed to generate topic interview.",
+    });
+  }
+};
 
 export const submitAnswer = async (req, res) => {
   try {

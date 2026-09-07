@@ -19,6 +19,9 @@ import Profile from "./components/Profile";
 import NotFound from "./pages/NotFound";
 
 import { setUserData } from "./redux/userSlice";
+import { Router } from "lucide-react";
+import Interview from "./pages/Interview";
+import InterviewTemplate from "./pages/InterviewTemplate";
 
 export const ServerURL = import.meta.env.VITE_API_URL;
 
@@ -92,11 +95,21 @@ function App() {
         element={<Profile />}
       />
 
+      <Route
+        path="/interview"
+        element={<InterviewTemplate />}
+      />
+
+      <Route
+        path="interview/topic"
+      element={<Interview/>}
+      />
+
 
       {/* ================= INTERVIEW STEP 1 ================= */}
 
       <Route
-        path="/interview"
+        path="/interview/cv"
         element={
           <Step1SetUp
             onStart={(data) => {

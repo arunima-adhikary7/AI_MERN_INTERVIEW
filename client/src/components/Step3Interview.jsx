@@ -474,43 +474,38 @@ function Step3Interview() {
             <section className="bg-white rounded-[26px] shadow-[0_8px_30px_rgba(0,0,0,0.07)] p-7">
 
               <h2 className="text-xl font-semibold mb-6">
-                Questions & Scores
+                Questions & Answers
               </h2>
 
-              <div className="space-y-3">
+              <div className="space-y-5">
 
-                {(report.questionWiseScore || []).map(
-                  (item, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between rounded-2xl bg-[#f7faf9] px-5 py-4 border border-gray-100 hover:bg-[#f1faf6] transition"
-                    >
+                {(report.questionWiseScore || []).map((item, index) => (
+                  <div
+                    key={index}
+                    className="rounded-2xl bg-[#f7faf9] border border-gray-100 p-5"
+                  >
 
-                      <div className="flex items-center gap-4 min-w-0">
+                    {/* QUESTION */}
+                    <div className="flex items-start gap-4">
 
-                        <div className="w-10 h-10 rounded-full bg-[#e9f9f3] text-[#08a878] flex items-center justify-center font-semibold shrink-0">
-                          {index + 1}
-                        </div>
+                      <div className="w-10 h-10 rounded-full bg-[#e9f9f3] text-[#08a878] flex items-center justify-center font-semibold shrink-0">
+                        {index + 1}
+                      </div>
 
-                        <div className="min-w-0">
-                          <p className="font-medium text-gray-800">
-                            Question {index + 1}
-                          </p>
+                      <div className="flex-1 min-w-0">
 
-                          <p className="text-sm text-gray-500 truncate">
-                            {item.question}
-                          </p>
+                        <p className="font-semibold text-gray-800">
+                          Question {index + 1}
+                        </p>
 
-                          {item.feedback && (
-                            <p className="text-xs text-gray-400 mt-1">
-                              {item.feedback}
-                            </p>
-                          )}
-                        </div>
+                        <p className="text-gray-600 mt-2 leading-6">
+                          {item.question}
+                        </p>
 
                       </div>
 
-                      <div className="text-right ml-4 shrink-0">
+                      {/* SCORE */}
+                      <div className="text-right shrink-0">
                         <p className="text-lg font-bold text-[#08a878]">
                           {item.score || 0}/10
                         </p>
@@ -521,8 +516,49 @@ function Step3Interview() {
                       </div>
 
                     </div>
-                  )
-                )}
+
+
+                    {/* YOUR ANSWER */}
+                    <div className="mt-2 ml-14">
+
+                      <p className="text-sm font-semibold text-gray-700 mb-2">
+                        Your Answer
+                      </p>
+
+                      <div className="rounded-xl bg-white border border-gray-200 p-4">
+
+                        <p className="text-gray-600 leading-7 whitespace-pre-wrap">
+                          {item.answer?.trim()
+                            ? item.answer
+                            : "No answer provided."}
+                        </p>
+
+                      </div>
+
+                    </div>
+
+
+                    {/* FEEDBACK */}
+                    {item.feedback && (
+                      <div className="mt-4 ml-14">
+
+                        <p className="text-sm font-semibold text-gray-700 mb-2">
+                          AI Feedback
+                        </p>
+
+                        <div className="rounded-xl bg-[#effbf6] border border-[#d8f3e8] p-4">
+
+                          <p className="text-sm text-gray-600 leading-6">
+                            {item.feedback}
+                          </p>
+
+                        </div>
+
+                      </div>
+                    )}
+
+                  </div>
+                ))}
 
               </div>
 
