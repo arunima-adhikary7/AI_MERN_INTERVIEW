@@ -253,22 +253,22 @@ const Step2Interview = () => {
   // CHECK INTERVIEW DATA
   // =========================================================
 
-  // useEffect(() => {
-  //   if (
-  //     !interviewData ||
-  //     !interviewId ||
-  //     !questions.length
-  //   ) {
-  //     navigate("/interview", {
-  //       replace: true,
-  //     });
-  //   }
-  // }, [
-  //   interviewData,
-  //   interviewId,
-  //   questions.length,
-  //   navigate,
-  // ]);
+  useEffect(() => {
+    if (
+      !interviewData ||
+      !interviewId ||
+      !questions.length
+    ) {
+      navigate("/interview", {
+        replace: true,
+      });
+    }
+  }, [
+    interviewData,
+    interviewId,
+    questions.length,
+    navigate,
+  ]);
 
 
   // =========================================================
