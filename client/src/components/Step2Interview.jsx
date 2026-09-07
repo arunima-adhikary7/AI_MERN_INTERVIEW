@@ -140,16 +140,16 @@ const Step2Interview = () => {
   // NO INTERVIEW DATA
   // =========================================================
 
-  // useEffect(() => {
-  //   if (!interviewData || !interviewId || !questions.length) {
-  //     navigate("/interview", { replace: true });
-  //   }
-  // }, [
-  //   interviewData,
-  //   interviewId,
-  //   questions.length,
-  //   navigate,
-  // ]);
+  useEffect(() => {
+    if (!interviewData || !interviewId || !questions.length) {
+      navigate("/interview", { replace: true });
+    }
+  }, [
+    interviewData,
+    interviewId,
+    questions.length,
+    navigate,
+  ]);
 
 
   // =========================================================
@@ -225,11 +225,6 @@ const Step2Interview = () => {
     isPaused,
     currentQuestionData,
   ]);
-
-
-  // =========================================================
-  // VOICE TO TEXT
-  // =========================================================
 
   // =========================================================
   // VOICE TO TEXT
