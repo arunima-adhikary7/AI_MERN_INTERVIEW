@@ -97,31 +97,126 @@ const InterviewerModel = ({ lipSyncRef }) => {
                 return;
             }
 
-            const dictionary = child.morphTargetDictionary;
-            const influences = child.morphTargetInfluences;
+            const dictionary =
+                child.morphTargetDictionary;
 
-            if (lipSync.active && lipSync.frames?.length) {
-                const elapsed =
-                    performance.now() - lipSync.startedAt;
+            const influences =
+                child.morphTargetInfluences;
 
-                const frameIndex = Math.floor(
-                    (elapsed / 1000) * lipSync.frameRate
-                );
 
-                const frame = lipSync.frames[frameIndex];
+            if (
+                lipSync.active &&
+                lipSync.frames?.length
+            ) {
+
+                const currentTime =
+                    lipSync.audio
+                        ? lipSync.audio.currentTime
+                        : (
+                            performance.now() -
+                            lipSync.startedAt
+                        ) / 1000;
+
+
+                const exactFrame =
+                    currentTime *
+                    lipSync.frameRate;
+
+
+                const frameIndex =
+                    Math.floor(exactFrame);
+
+
+                const nextFrameIndex =
+                    Math.min(
+                        frameIndex + 1,
+                        lipSync.frames.length - 1
+                    );
+
+
+                const frame =
+                    lipSync.frames[frameIndex];
+
+                const nextFrame =
+                    lipSync.frames[nextFrameIndex];
+
 
                 if (frame) {
-                    FACIAL_BLENDSHAPES.forEach((name, index) => {
-                        const morphIndex = dictionary[name];
+
+                    const interpolation =
+                        exactFrame - frameIndex;
+
+
+                    FACIAL_BLENDSHAPES.forEach(
+                        (name, index) => {
+
+                            const morphIndex =
+                                dictionary[name];
+
+                            if (
+                                morphIndex === undefined
+                            ) {
+                                return;
+                            }
+
+
+                            const currentValue =
+                                frame[index] || 0;
+
+                            const nextValue =
+                                nextFrame?.[index] ||
+                                currentValue;
+
+
+                            const targetValue =
+                                currentValue +
+                                (
+                                    nextValue -
+                                    currentValue
+                                ) *
+                                interpolation;
+
+
+                            /*
+                            Smooth movement.
+    
+                            Lower value =
+                            slower/subtler movement.
+                            */
+
+                            influences[morphIndex] +=
+                                (
+                                    targetValue -
+                                    influences[morphIndex]
+                                ) * 0.35;
+                        }
+                    );
+                }
+
+            } else {
+
+                /*
+                Return face smoothly to neutral.
+                */
+
+                FACIAL_BLENDSHAPES.forEach(
+                    (name) => {
+
+                        const morphIndex =
+                            dictionary[name];
 
                         if (
-                            morphIndex !== undefined &&
-                            frame[index] !== undefined
+                            morphIndex !== undefined
                         ) {
-                            influences[morphIndex] = frame[index];
+
+                            influences[morphIndex] +=
+                                (
+                                    0 -
+                                    influences[morphIndex]
+                                ) * 0.15;
                         }
-                    });
-                }
+                    }
+                );
             }
         });
     });
