@@ -464,10 +464,10 @@ export const speakWithElevenLabs = async (
 
     try {
 
-        console.log(
-            "[ElevenLabs] API URL:",
-            `${API_URL}/api/speech/speak`
-        );
+        // console.log(
+        //     "[ElevenLabs] API URL:",
+        //     `${API_URL}/api/speech/speak`
+        // );
 
 
         const response = await fetch(
@@ -586,15 +586,15 @@ export const speakWithElevenLabs = async (
             );
 
 
-        console.log(
-            "[ElevenLabs] Characters:",
-            data.alignment?.characters?.length || 0
-        );
+        // console.log(
+        //     "[ElevenLabs] Characters:",
+        //     data.alignment?.characters?.length || 0
+        // );
 
-        console.log(
-            "[ElevenLabs] Lip-sync frames:",
-            frames.length
-        );
+        // console.log(
+        //     "[ElevenLabs] Lip-sync frames:",
+        //     frames.length
+        // );
 
 
         lipSyncRef.current = {
