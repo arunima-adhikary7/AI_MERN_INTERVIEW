@@ -180,6 +180,7 @@ const Step2Interview = () => {
     setAnswers,
   ] = useState([]);
 
+  const answerRef = useRef("");
 
   const [
     finished,
@@ -268,34 +269,24 @@ const Step2Interview = () => {
   // =========================================================
 
   useEffect(() => {
-    if (
-      !currentQuestionData ||
-      finished
-    ) {
+    if (!currentQuestionData || finished) {
       return;
     }
 
-    // Stop AI speech when question changes.
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
+    answerRef.current = "";
+    voiceTextRef.current = "";
+
+    submittingRef.current = false;
+
+    window.speechSynthesis?.cancel();
 
     setIsSpeaking(false);
 
-    // Reset timer.
-    setTimeLeft(
-      currentQuestionTime
-    );
+    setTimeLeft(currentQuestionTime);
 
-    // Reset answer.
     setAnswer("");
 
-    // Reset feedback.
     setFeedback("");
-
-    // Reset stored speech.
-    voiceTextRef.current = "";
-
   }, [
     currentQuestion,
     currentQuestionTime,
@@ -311,34 +302,34 @@ const Step2Interview = () => {
   useEffect(() => {
     if (
       finished ||
-      submitting ||
       isPaused ||
-      !currentQuestionData
+      !currentQuestionData ||
+      submittingRef.current
     ) {
       return;
     }
 
-    // Time finished.
-    if (timeLeft <= 0) {
-      handleSubmitAnswer(true);
-      return;
-    }
+    const timer = setInterval(() => {
+      setTimeLeft((previous) => {
+        // When timer reaches 0, submit THIS question
+        if (previous <= 1) {
+          clearInterval(timer);
 
-    const timer =
-      setInterval(() => {
-        setTimeLeft(
-          (previous) =>
-            previous - 1
-        );
-      }, 1000);
+          handleSubmitAnswer(true);
 
-    return () =>
+          return 0;
+        }
+
+        return previous - 1;
+      });
+    }, 1000);
+
+    return () => {
       clearInterval(timer);
-
+    };
   }, [
-    timeLeft,
+    currentQuestion,
     finished,
-    submitting,
     isPaused,
     currentQuestionData,
   ]);
@@ -426,7 +417,7 @@ const Step2Interview = () => {
         // currently spoken text.
         const displayText =
           `${voiceTextRef.current} ${interimText}`.trim();
-
+        answerRef.current = displayText;
         setAnswer(
           displayText
         );
@@ -795,156 +786,126 @@ const Step2Interview = () => {
   // SUBMIT ANSWER
   // =========================================================
 
-  const handleSubmitAnswer =
-    async (
-      automatic = false
-    ) => {
+  const handleSubmitAnswer = async (automatic = false) => {
+    // Prevent duplicate submission
+    if (
+      finishing ||
+      !currentQuestionData ||
+      submittingRef.current
+    ) {
+      return;
+    }
 
-      // Prevent duplicate submission.
+    submittingRef.current = true;
+    setSubmitting(true);
+
+    // IMPORTANT:
+    // Capture everything BEFORE changing currentQuestion
+    const submittedQuestionIndex = currentQuestion;
+    const submittedQuestionText = currentQuestionText;
+    const submittedAnswer = answerRef.current.trim();
+
+    const submittedTimeTaken = Math.max(
+      0,
+      currentQuestionTime - timeLeft
+    );
+
+    // Stop candidate voice
+    stopVoiceAnswer();
+
+    // Stop AI voice
+    try {
+      window.speechSynthesis?.cancel();
+    } catch (_) { }
+
+    setIsSpeaking(false);
+
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/interview/submit-answer`,
+        {
+          interviewId,
+
+          questionIndex:
+            submittedQuestionIndex,
+
+          answer:
+            submittedAnswer,
+
+          timeTaken:
+            submittedTimeTaken,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
+      // Save submitted answer locally
+      const newAnswer = {
+        questionNumber:
+          submittedQuestionIndex + 1,
+
+        question:
+          submittedQuestionText,
+
+        answer:
+          submittedAnswer,
+
+        timeTaken:
+          submittedTimeTaken,
+
+        automaticallySubmitted:
+          automatic,
+
+        feedback:
+          response.data?.feedback || "",
+      };
+
+      setAnswers((previous) => [
+        ...previous,
+        newAnswer,
+      ]);
+
+      setFeedback(
+        response.data?.feedback || ""
+      );
+
+      // LAST QUESTION
       if (
-        submitting ||
-        finishing ||
-        !currentQuestionData
+        submittedQuestionIndex ===
+        TOTAL_QUESTIONS - 1
       ) {
+        await finishInterview();
         return;
       }
 
+      // IMPORTANT:
+      // Clear answer BEFORE moving to next question
+      answerRef.current = "";
+      voiceTextRef.current = "";
 
-      submittingRef.current =
-        true;
+      setAnswer("");
+      setFeedback("");
 
+      // Move to next question
+      setCurrentQuestion(
+        submittedQuestionIndex + 1
+      );
 
-      // Stop candidate voice.
-      stopVoiceAnswer();
+    } catch (error) {
+      console.error(
+        "Submit answer failed:",
+        error.response?.data ||
+        error.message
+      );
 
+      // Allow retry if request failed
+      submittingRef.current = false;
 
-      // Stop AI voice.
-      if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-
-        setIsSpeaking(false);
-      }
-
-
-      const trimmedAnswer =
-        answer.trim();
-
-
-      const timeTaken =
-        currentQuestionTime -
-        timeLeft;
-
-
-      try {
-        setSubmitting(true);
-
-
-        // -----------------------------
-        // SEND ANSWER TO BACKEND
-        // -----------------------------
-
-        const response =
-          await axios.post(
-            `${API_URL}/api/interview/submit-answer`,
-            {
-              interviewId,
-
-              questionIndex:
-                currentQuestion,
-
-              answer:
-                trimmedAnswer,
-
-              timeTaken,
-            },
-            {
-              withCredentials: true,
-            }
-          );
-
-
-        // -----------------------------
-        // SAVE LOCAL ANSWER
-        // -----------------------------
-
-        const newAnswer = {
-          questionNumber:
-            currentQuestion + 1,
-
-          question:
-            currentQuestionText,
-
-          answer:
-            trimmedAnswer,
-
-          timeTaken,
-
-          automaticallySubmitted:
-            automatic,
-
-          feedback:
-            response.data
-              .feedback || "",
-        };
-
-
-        const updatedAnswers =
-          [
-            ...answers,
-            newAnswer,
-          ];
-
-
-        setAnswers(
-          updatedAnswers
-        );
-
-
-        setFeedback(
-          response.data
-            .feedback || ""
-        );
-
-
-        // -----------------------------
-        // LAST QUESTION
-        // -----------------------------
-
-        if (
-          currentQuestion ===
-          TOTAL_QUESTIONS - 1
-        ) {
-          await finishInterview();
-
-          return;
-        }
-
-
-        // -----------------------------
-        // NEXT QUESTION
-        // -----------------------------
-
-        setCurrentQuestion(
-          (previous) =>
-            previous + 1
-        );
-
-      } catch (error) {
-
-        console.error(
-          "Submit answer failed:",
-          error.response?.data ||
-          error.message
-        );
-
-      } finally {
-
-        submittingRef.current =
-          false;
-
-        setSubmitting(false);
-      }
-    };
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
 
   // =========================================================
@@ -1205,54 +1166,40 @@ const Step2Interview = () => {
             <AnswerPanel
               answer={answer}
 
-              setAnswer={
-                setAnswer
-              }
+              setAnswer={(value) => {
+                const nextValue =
+                  typeof value === "function"
+                    ? value(answerRef.current)
+                    : value;
 
-              answerMode={
-                answerMode
-              }
+                answerRef.current = nextValue;
+                setAnswer(nextValue);
+              }}
 
-              setAnswerMode={
-                setAnswerMode
-              }
+              answerMode={answerMode}
 
-              voiceAnswerEnabled={
-                voiceAnswerEnabled
-              }
+              setAnswerMode={setAnswerMode}
 
-              toggleVoiceAnswer={
-                toggleVoiceAnswer
-              }
+              voiceAnswerEnabled={voiceAnswerEnabled}
 
-              isListening={
-                isListening
-              }
+              toggleVoiceAnswer={toggleVoiceAnswer}
 
-              feedback={
-                feedback
-              }
+              isListening={isListening}
 
-              submitting={
-                submitting
-              }
+              feedback={feedback}
 
-              finishing={
-                finishing
-              }
+              submitting={submitting}
 
-              isPaused={
-                isPaused
-              }
+              finishing={finishing}
+
+              isPaused={isPaused}
 
               isLastQuestion={
                 currentQuestion ===
                 TOTAL_QUESTIONS - 1
               }
 
-              onSubmit={
-                handleSubmitAnswer
-              }
+              onSubmit={handleSubmitAnswer}
             />
 
           </div>
