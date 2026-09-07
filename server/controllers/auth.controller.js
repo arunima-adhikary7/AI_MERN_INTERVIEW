@@ -1,120 +1,47 @@
 import User from "../models/user.model.js";
 import getToken from "../config/token.js";
-
 import bcrypt from "bcryptjs";
 
-// export const googleAuth = async (req, res) => {
-//   try {
-//     const { name, email, googleId, profileImage } = req.body;
+// =====================================================
+// COOKIE OPTIONS
+// =====================================================
 
-//     if (!name || !email) {
-//       return res.status(400).json({
-//         message: "Name and email are required",
-//       });
-//     }
+const isProduction = process.env.NODE_ENV === "production";
 
-//     let user = await User.findOne({ email });
+const cookieOptions = {
+  httpOnly: true,
 
-//     if (!user) {
-//       user = await User.create({
-//         name,
-//         email,
-//         googleId,
-//         profileImage,
-//         authProvider: "google",
-//         isVerified: true,
-//       });
-//     }
+  // Localhost -> false
+  // Production HTTPS -> true
+  secure: isProduction,
 
-//     const token = getToken(user._id);
+  // Localhost -> lax
+  // Production frontend/backend on different sites -> none
+  sameSite: isProduction ? "none" : "lax",
 
-//     res.cookie("token",token, {
-//       httpOnly: true,
-//       secure: false,
-//       sameSite: "strict",
-//       maxAge: 7 * 24 * 60 * 60 * 1000,
-//     });
-
-//     return res.status(200).json({
-//       message: "User logged in successfully",
-//       user,
-//     });
-//   } catch (err) {
-//     console.error("Google Auth Error:", err);
-
-//     return res.status(500).json({
-//       message: "Error logging in user",
-//       error: err.message,
-//     });
-//   }
-// };
-
-// export const logout = async (req, res) => {
-//   try {
-//     res.clearCookie("token");
-
-//     return res.status(200).json({
-//       message: "User logged out successfully",
-//     });
-//   } catch (err) {
-//     return res.status(500).json({
-//       message: "Error logging out user",
-//       error: err.message,
-//     });
-//   }
-// };
-
-// export const getCurrentUser = async (req, res) => {
-//   try {
-//     const userId = req.userId;
-
-//     const user = await User.findById(userId);
-
-//     if (!user) {
-//       return res.status(404).json({
-//         message: "User not found",
-//       });
-//     }
-
-//     return res.status(200).json({ user });
-//   } catch (err) {
-//     return res.status(500).json({
-//       message: "Error fetching user",
-//       error: err.message,
-//     });
-//   }
-// };
-
-
-
-
-
-
-
-
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+};
 
 // =====================================================
 // NORMAL SIGNUP
 // =====================================================
+
 export const signup = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // Check required fields
     if (!name || !email || !password) {
       return res.status(400).json({
         message: "Name, email and password are required",
       });
     }
 
-    // Check password length
     if (password.length < 6) {
       return res.status(400).json({
         message: "Password must be at least 6 characters",
       });
     }
 
-    // Check if user already exists
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
@@ -123,10 +50,8 @@ export const signup = async (req, res) => {
       });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
     const user = await User.create({
       name,
       email,
@@ -135,16 +60,9 @@ export const signup = async (req, res) => {
       isVerified: true,
     });
 
-    // Generate JWT
     const token = getToken(user._id);
 
-    // Store JWT in HTTP-only cookie
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: false, // true in production with HTTPS
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie("token", token, cookieOptions);
 
     return res.status(201).json({
       message: "Account created successfully",
@@ -161,10 +79,10 @@ export const signup = async (req, res) => {
   }
 };
 
-
 // =====================================================
 // NORMAL LOGIN
 // =====================================================
+
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -201,19 +119,9 @@ export const login = async (req, res) => {
       });
     }
 
-    // Generate JWT STRING
     const token = getToken(user._id);
 
-    console.log("Generated token:", token);
-    console.log("Token type:", typeof token);
-
-    // Store JWT in cookie
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie("token", token, cookieOptions);
 
     return res.status(200).json({
       message: "Login successful",
@@ -230,10 +138,10 @@ export const login = async (req, res) => {
   }
 };
 
-
 // =====================================================
 // GOOGLE AUTH
 // =====================================================
+
 export const googleAuth = async (req, res) => {
   try {
     const {
@@ -249,10 +157,8 @@ export const googleAuth = async (req, res) => {
       });
     }
 
-    // Find existing user
     let user = await User.findOne({ email });
 
-    // Create user if doesn't exist
     if (!user) {
       user = await User.create({
         name,
@@ -263,7 +169,6 @@ export const googleAuth = async (req, res) => {
         isVerified: true,
       });
     } else {
-      // Update Google information if necessary
       user.googleId = googleId || user.googleId;
       user.profileImage =
         profileImage || user.profileImage;
@@ -271,16 +176,9 @@ export const googleAuth = async (req, res) => {
       await user.save();
     }
 
-    // Generate JWT
     const token = getToken(user._id);
 
-    // Store JWT in HTTP-only cookie
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: false, // true in production with HTTPS
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie("token", token, cookieOptions);
 
     return res.status(200).json({
       message: "Google login successful",
@@ -297,16 +195,16 @@ export const googleAuth = async (req, res) => {
   }
 };
 
-
 // =====================================================
 // LOGOUT
 // =====================================================
+
 export const logout = async (req, res) => {
   try {
     res.clearCookie("token", {
       httpOnly: true,
-      secure: false,
-      sameSite: "strict",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
     });
 
     return res.status(200).json({
@@ -314,6 +212,8 @@ export const logout = async (req, res) => {
     });
 
   } catch (err) {
+    console.error("Logout Error:", err);
+
     return res.status(500).json({
       message: "Error logging out user",
       error: err.message,
@@ -321,10 +221,10 @@ export const logout = async (req, res) => {
   }
 };
 
-
 // =====================================================
 // GET CURRENT USER
 // =====================================================
+
 export const getCurrentUser = async (req, res) => {
   try {
     const userId = req.userId;
@@ -350,4 +250,3 @@ export const getCurrentUser = async (req, res) => {
     });
   }
 };
-
