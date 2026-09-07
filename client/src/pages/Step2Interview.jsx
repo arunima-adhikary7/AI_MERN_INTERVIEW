@@ -219,6 +219,12 @@ const Step2Interview = () => {
   const pausedDuringSpeakingRef =
     useRef(false);
 
+  const lipSyncRef = useRef({
+    active: false,
+    frames: [],
+    startedAt: 0,
+    frameRate: 60,
+  });
 
   const [
     voiceAnswerEnabled,
@@ -246,22 +252,22 @@ const Step2Interview = () => {
   // CHECK INTERVIEW DATA
   // =========================================================
 
-  useEffect(() => {
-    if (
-      !interviewData ||
-      !interviewId ||
-      !questions.length
-    ) {
-      navigate("/interview", {
-        replace: true,
-      });
-    }
-  }, [
-    interviewData,
-    interviewId,
-    questions.length,
-    navigate,
-  ]);
+  // useEffect(() => {
+  //   if (
+  //     !interviewData ||
+  //     !interviewId ||
+  //     !questions.length
+  //   ) {
+  //     navigate("/interview", {
+  //       replace: true,
+  //     });
+  //   }
+  // }, [
+  //   interviewData,
+  //   interviewId,
+  //   questions.length,
+  //   navigate,
+  // ]);
 
 
   // =========================================================
@@ -1060,7 +1066,7 @@ const Step2Interview = () => {
               interviewerMode={interviewerMode}
 
               avatar={avatar}
-
+              lipSyncRef={lipSyncRef}
               isSpeaking={isSpeaking}
 
               voiceEnabled={voiceEnabled}

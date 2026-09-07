@@ -1,9 +1,150 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { motion } from "framer-motion";
-import { Volume2, VolumeX } from "lucide-react";
+import * as THREE from "three";
+import {
+    Volume2,
+    VolumeX,
+    Mic,
+    MicOff,
+    Sparkles,
+} from "lucide-react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { Center, useGLTF } from "@react-three/drei";
+
+// =====================================================
+// 3D INTERVIEWER MODEL
+// =====================================================
+
+const FACIAL_BLENDSHAPES = [
+    "eyeBlinkLeft",
+    "eyeLookDownLeft",
+    "eyeLookInLeft",
+    "eyeLookOutLeft",
+    "eyeLookUpLeft",
+    "eyeSquintLeft",
+    "eyeWideLeft",
+
+    "eyeBlinkRight",
+    "eyeLookDownRight",
+    "eyeLookInRight",
+    "eyeLookOutRight",
+    "eyeLookUpRight",
+    "eyeSquintRight",
+    "eyeWideRight",
+
+    "jawForward",
+    "jawLeft",
+    "jawRight",
+    "jawOpen",
+
+    "mouthClose",
+    "mouthFunnel",
+    "mouthPucker",
+    "mouthLeft",
+    "mouthRight",
+    "mouthSmileLeft",
+    "mouthSmileRight",
+    "mouthFrownLeft",
+    "mouthFrownRight",
+    "mouthDimpleLeft",
+    "mouthDimpleRight",
+    "mouthStretchLeft",
+    "mouthStretchRight",
+    "mouthRollLower",
+    "mouthRollUpper",
+    "mouthShrugLower",
+    "mouthShrugUpper",
+    "mouthPressLeft",
+    "mouthPressRight",
+    "mouthLowerDownLeft",
+    "mouthLowerDownRight",
+    "mouthUpperUpLeft",
+    "mouthUpperUpRight",
+
+    "browDownLeft",
+    "browDownRight",
+    "browInnerUp",
+    "browOuterUpLeft",
+    "browOuterUpRight",
+
+    "cheekPuff",
+    "cheekSquintLeft",
+    "cheekSquintRight",
+
+    "noseSneerLeft",
+    "noseSneerRight",
+
+    "tongueOut",
+    "headRoll",
+    "leftEyeRoll",
+    "rightEyeRoll",
+];
+
+const InterviewerModel = ({ lipSyncRef }) => {
+    const { scene } = useGLTF("/models/interviewer3.glb");
+
+    useFrame(() => {
+        const lipSync = lipSyncRef?.current;
+
+        if (!lipSync) return;
+
+        scene.traverse((child) => {
+            if (
+                !child.isMesh ||
+                !child.morphTargetDictionary ||
+                !child.morphTargetInfluences
+            ) {
+                return;
+            }
+
+            const dictionary = child.morphTargetDictionary;
+            const influences = child.morphTargetInfluences;
+
+            if (lipSync.active && lipSync.frames?.length) {
+                const elapsed =
+                    performance.now() - lipSync.startedAt;
+
+                const frameIndex = Math.floor(
+                    (elapsed / 1000) * lipSync.frameRate
+                );
+
+                const frame = lipSync.frames[frameIndex];
+
+                if (frame) {
+                    FACIAL_BLENDSHAPES.forEach((name, index) => {
+                        const morphIndex = dictionary[name];
+
+                        if (
+                            morphIndex !== undefined &&
+                            frame[index] !== undefined
+                        ) {
+                            influences[morphIndex] = frame[index];
+                        }
+                    });
+                }
+            }
+        });
+    });
+
+    return (
+        <primitive
+            object={scene}
+            position={[0, -8, 0]}
+            rotation={[-0.1, 0, 0]}
+            scale={4.8}
+        />
+    );
+};
+
+useGLTF.preload("/models/interviewer3.glb");
+
+// =====================================================
+// INTERVIEWER PANEL
+// =====================================================
 
 const InterviewerPanel = ({
     avatar,
+    lipSyncRef,
     isSpeaking,
     voiceEnabled,
     onToggleVoice,
@@ -11,157 +152,180 @@ const InterviewerPanel = ({
     onToggleAvatar,
 }) => {
     return (
-        <div className="relative w-full h-64 rounded-2xl overflow-hidden bg-gradient-to-b from-gray-50 to-gray-100 mb-5">
+        <div className="relative w-full h-[430px] rounded-[28px] overflow-hidden bg-[#080b10] border border-white/10 shadow-[0_25px_80px_rgba(0,0,0,0.25)]">
 
             {/* =====================================================
-                AI AVATAR / VOICE ONLY
+                BACKGROUND
+            ===================================================== */}
+
+            <div className="absolute inset-0 pointer-events-none">
+
+                {/* Main gradient */}
+                <div className="absolute inset-0 bg-gradient-to-br from-[#10151d] via-[#080b10] to-[#050609]" />
+
+                {/* Green ambient glow */}
+                <motion.div
+                    animate={{
+                        scale: isSpeaking ? [1, 1.2, 1] : 1,
+                        opacity: isSpeaking ? [0.12, 0.22, 0.12] : 0.08,
+                    }}
+                    transition={{
+                        duration: 2.5,
+                        repeat: isSpeaking ? Infinity : 0,
+                    }}
+                    className="absolute top-[-120px] left-1/2 -translate-x-1/2 w-[420px] h-[420px] rounded-full bg-green-400 blur-[100px]"
+                />
+
+                {/* Secondary glow */}
+                <div className="absolute bottom-[-180px] right-[-100px] w-[350px] h-[350px] rounded-full bg-emerald-500/10 blur-[100px]" />
+
+                {/* Grid */}
+                <div
+                    className="absolute inset-0 opacity-[0.035]"
+                    style={{
+                        backgroundImage:
+                            "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
+                        backgroundSize: "32px 32px",
+                    }}
+                />
+            </div>
+
+            {/* =====================================================
+                TOP HEADER
+            ===================================================== */}
+
+            <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-6 py-5">
+
+                <div className="flex items-center gap-3">
+
+                    <div className="w-9 h-9 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center">
+                        <Sparkles
+                            size={16}
+                            className="text-green-400"
+                        />
+                    </div>
+
+                    <div>
+                        <p className="text-[11px] font-semibold tracking-[0.18em] text-white/40 uppercase">
+                            AI Interviewer
+                        </p>
+
+                        {/* <p className="text-sm font-medium text-white/90">
+                            Your interviewer is ready
+                        </p> */}
+                    </div>
+
+                </div>
+
+                {/* Live status */}
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.05] border border-white/10">
+
+                    <motion.span
+                        animate={{
+                            opacity: isSpeaking ? [0.4, 1, 0.4] : 1,
+                            scale: isSpeaking ? [0.9, 1.15, 0.9] : 1,
+                        }}
+                        transition={{
+                            duration: 1.2,
+                            repeat: isSpeaking ? Infinity : 0,
+                        }}
+                        className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.8)]"
+                    />
+
+                    <span className="text-[11px] font-medium text-white/60">
+                        {isSpeaking ? "LIVE" : "READY"}
+                    </span>
+
+                </div>
+
+            </div>
+
+            {/* =====================================================
+                MAIN CONTENT
             ===================================================== */}
 
             {showAvatar ? (
-                <div className="w-full h-full flex flex-col items-center justify-center">
 
-                    <div className="relative">
+                <div className="relative z-10 w-full h-full flex flex-col items-center justify-center pt-8">
 
-                        {/* Speaking glow */}
+                    {/* Model stage */}
+
+                    <div className="relative w-[250px] h-[250px]">
+
+                        {/* Outer speaking glow */}
+
                         <motion.div
                             animate={
                                 isSpeaking
                                     ? {
-                                        scale: [1, 1.12, 1],
-                                        opacity: [0.25, 0.5, 0.25],
+                                        scale: [1, 1.08, 1],
+                                        opacity: [0.15, 0.32, 0.15],
                                     }
                                     : {
                                         scale: 1,
-                                        opacity: 0.2,
+                                        opacity: 0.12,
                                     }
                             }
                             transition={{
-                                duration: 1,
+                                duration: 2,
                                 repeat: isSpeaking ? Infinity : 0,
                             }}
-                            className="absolute inset-[-18px] rounded-full bg-green-400 blur-xl"
+                            className="absolute inset-[-25px] rounded-full bg-green-400 blur-[45px]"
                         />
 
-                        {/* Avatar */}
+                        {/* Outer ring */}
+
                         <motion.div
                             animate={
                                 isSpeaking
                                     ? {
-                                        y: [0, -2, 0],
+                                        rotate: 360,
                                     }
-                                    : {
-                                        y: 0,
-                                    }
+                                    : {}
                             }
                             transition={{
-                                duration: 0.8,
+                                duration: 12,
                                 repeat: isSpeaking ? Infinity : 0,
+                                ease: "linear",
                             }}
-                            className="relative w-36 h-36 rounded-full bg-gradient-to-br from-slate-700 via-slate-800 to-black shadow-2xl ring-4 ring-white overflow-hidden"
+                            className="absolute inset-0 rounded-full border border-green-400/20"
+                        />
+
+                        {/* Model container */}
+                        <div
+                            className="relative w-full h-full rounded-full overflow-hidden border border-white/15 bg-gradient-to-b from-white/[0.08] to-white/[0.02] shadow-[0_20px_60px_rgba(0,0,0,0.45)]"
                         >
+                            <Canvas
+                                camera={{
+                                    position: [0, 1 , 6],
+                                    fov: 15,
+                                }}
+                            >
+                                <ambientLight intensity={2} />
 
-                            {/* Hair */}
-                            <div className="absolute top-0 left-5 right-5 h-14 bg-gray-950 rounded-b-[45%]" />
-
-                            {/* Face */}
-                            <div className="absolute top-7 left-1/2 -translate-x-1/2 w-24 h-28 rounded-[45%] bg-gradient-to-b from-amber-100 to-orange-200">
-
-                                {/* Ears */}
-                                <div className="absolute left-[-6px] top-12 w-4 h-8 rounded-full bg-orange-200" />
-
-                                <div className="absolute right-[-6px] top-12 w-4 h-8 rounded-full bg-orange-200" />
-
-                                {/* Eyebrows */}
-                                <div className="absolute top-9 left-5 w-7 h-1 bg-gray-700 rounded-full rotate-[-5deg]" />
-
-                                <div className="absolute top-9 right-5 w-7 h-1 bg-gray-700 rounded-full rotate-[5deg]" />
-
-                                {/* Left Eye */}
-                                <motion.div
-                                    animate={
-                                        isSpeaking
-                                            ? {
-                                                scaleY: [1, 0.2, 1],
-                                            }
-                                            : {
-                                                scaleY: 1,
-                                            }
-                                    }
-                                    transition={{
-                                        duration: 0.25,
-                                        repeat: isSpeaking ? Infinity : 0,
-                                        repeatDelay: 2.5,
-                                    }}
-                                    className="absolute top-12 left-7 w-2.5 h-2.5 rounded-full bg-gray-900"
+                                <directionalLight
+                                    position={[3, 5, 5]}
+                                    intensity={3}
                                 />
 
-                                {/* Right Eye */}
-                                <motion.div
-                                    animate={
-                                        isSpeaking
-                                            ? {
-                                                scaleY: [1, 0.2, 1],
-                                            }
-                                            : {
-                                                scaleY: 1,
-                                            }
-                                    }
-                                    transition={{
-                                        duration: 0.25,
-                                        repeat: isSpeaking ? Infinity : 0,
-                                        repeatDelay: 2.5,
-                                    }}
-                                    className="absolute top-12 right-7 w-2.5 h-2.5 rounded-full bg-gray-900"
+                                <directionalLight
+                                    position={[-3, 3, 4]}
+                                    intensity={2}
                                 />
 
-                                {/* Nose */}
-                                <div className="absolute top-14 left-1/2 -translate-x-1/2 w-2 h-6 rounded-full bg-orange-300" />
+                                <Suspense fallback={null}>
+                                    <InterviewerModel
+                                        lipSyncRef={lipSyncRef}
+                                    />
+                                </Suspense>
+                            </Canvas>
 
-                                {/* Mouth */}
-                                <motion.div
-                                    animate={
-                                        isSpeaking
-                                            ? {
-                                                scaleY: [
-                                                    0.5,
-                                                    1.4,
-                                                    0.7,
-                                                    1.2,
-                                                    0.5,
-                                                ],
-                                                width: [
-                                                    18,
-                                                    24,
-                                                    14,
-                                                    22,
-                                                    18,
-                                                ],
-                                            }
-                                            : {
-                                                scaleY: 0.4,
-                                                width: 18,
-                                            }
-                                    }
-                                    transition={{
-                                        duration: 0.45,
-                                        repeat: isSpeaking ? Infinity : 0,
-                                        ease: "easeInOut",
-                                    }}
-                                    className="absolute bottom-7 left-1/2 -translate-x-1/2 h-2 rounded-full bg-gray-800"
-                                />
-
-                                {/* Neck */}
-                                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-10 h-12 bg-orange-200" />
-
-                            </div>
-
-                            {/* Shirt */}
-                            <div className="absolute bottom-[-30px] left-1/2 -translate-x-1/2 w-36 h-20 rounded-t-[50%] bg-gradient-to-r from-blue-600 to-indigo-700" />
-
-                        </motion.div>
-
+                            {/* Bottom fade */}
+                            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
+                        </div>
 
                         {/* Speaking indicator */}
+
                         {isSpeaking && (
                             <motion.div
                                 initial={{
@@ -172,10 +336,10 @@ const InterviewerPanel = ({
                                     scale: 1,
                                     opacity: 1,
                                 }}
-                                className="absolute -right-2 bottom-1 w-9 h-9 rounded-full bg-green-500 flex items-center justify-center shadow-lg ring-4 ring-white"
+                                className="absolute right-1 bottom-4 w-11 h-11 rounded-full bg-green-500 border-[3px] border-[#080b10] flex items-center justify-center shadow-[0_0_25px_rgba(34,197,94,0.45)]"
                             >
                                 <Volume2
-                                    size={17}
+                                    size={18}
                                     className="text-white"
                                 />
                             </motion.div>
@@ -183,38 +347,40 @@ const InterviewerPanel = ({
 
                     </div>
 
+                    {/* =================================================
+                        AUDIO VISUALIZER
+                    ================================================= */}
 
-                    {/* Sound bars */}
-                    <div className="flex items-center gap-1 h-7 mt-3">
+                    <div className="flex items-center gap-[4px] h-6 mt-1">
 
-                        {[1, 2, 3, 4, 5, 6, 7].map(
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(
                             (bar) => (
                                 <motion.div
                                     key={bar}
-                                    className="w-1.5 rounded-full bg-green-500"
+                                    className="w-[3px] rounded-full bg-green-400"
                                     animate={
                                         isSpeaking
                                             ? {
                                                 height: [
-                                                    6,
+                                                    5,
+                                                    14 + (bar % 3) * 5,
+                                                    8,
                                                     18,
-                                                    10,
-                                                    25,
-                                                    12,
                                                     6,
                                                 ],
                                             }
                                             : {
-                                                height: 6,
+                                                height: 4,
                                             }
                                     }
                                     transition={{
-                                        duration: 0.5,
+                                        duration: 0.55,
                                         repeat: isSpeaking
                                             ? Infinity
                                             : 0,
                                         repeatType: "mirror",
                                         delay: bar * 0.06,
+                                        ease: "easeInOut",
                                     }}
                                 />
                             )
@@ -222,44 +388,53 @@ const InterviewerPanel = ({
 
                     </div>
 
+                    {/* Name */}
 
-                    <p className="text-sm font-semibold text-gray-700 mt-1">
-                        AI Interviewer
-                    </p>
+                    {/* <div className=" text-center">
 
-                    <p className="text-xs text-gray-400">
-                        {isSpeaking
-                            ? "Speaking..."
-                            : "Ready"}
-                    </p>
+                        <p className="text-sm mb-9 font-semibold text-white">
+                            AI Interviewer
+                        </p>
+                        <p className="text-xs text-white/40 mt-0.5">
+                            {isSpeaking
+                                ? "Speaking to you..."
+                                : "Waiting for your response"}
+                        </p>
+
+                    </div> */}
 
                 </div>
 
             ) : (
 
-                /* =================================================
+                /* =====================================================
                    VOICE ONLY MODE
-                ================================================= */
+                ===================================================== */
 
-                <div className="w-full h-full flex flex-col items-center justify-center">
+                <div className="relative z-10 w-full h-full flex flex-col items-center justify-center">
 
                     <motion.div
                         animate={
                             isSpeaking
                                 ? {
                                     scale: [1, 1.05, 1],
+                                    boxShadow: [
+                                        "0 0 0px rgba(74,222,128,0)",
+                                        "0 0 50px rgba(74,222,128,0.2)",
+                                        "0 0 0px rgba(74,222,128,0)",
+                                    ],
                                 }
                                 : {
                                     scale: 1,
                                 }
                         }
                         transition={{
-                            duration: 0.8,
+                            duration: 1.5,
                             repeat: isSpeaking
                                 ? Infinity
                                 : 0,
                         }}
-                        className="w-32 h-32 rounded-full bg-white shadow-sm flex items-center justify-center"
+                        className="w-36 h-36 rounded-full bg-white/[0.05] border border-white/10 flex items-center justify-center"
                     >
 
                         <div className="flex items-center justify-center gap-2 h-20">
@@ -268,20 +443,20 @@ const InterviewerPanel = ({
                                 (bar) => (
                                     <motion.div
                                         key={bar}
-                                        className="w-3 rounded-full bg-black"
+                                        className="w-2 rounded-full bg-green-400"
                                         animate={
                                             isSpeaking
                                                 ? {
                                                     height: [
+                                                        16,
+                                                        35,
+                                                        22,
+                                                        48,
                                                         18,
-                                                        45,
-                                                        25,
-                                                        55,
-                                                        20,
                                                     ],
                                                 }
                                                 : {
-                                                    height: 18,
+                                                    height: 16,
                                                 }
                                         }
                                         transition={{
@@ -289,10 +464,8 @@ const InterviewerPanel = ({
                                             repeat: isSpeaking
                                                 ? Infinity
                                                 : 0,
-                                            repeatType:
-                                                "mirror",
-                                            delay:
-                                                bar * 0.08,
+                                            repeatType: "mirror",
+                                            delay: bar * 0.08,
                                             ease: "easeInOut",
                                         }}
                                     />
@@ -303,105 +476,110 @@ const InterviewerPanel = ({
 
                     </motion.div>
 
-                    <p className="mt-4 text-sm font-semibold text-gray-700">
+                    <p className="mt-5 text-sm font-semibold text-white">
                         AI Interviewer
                     </p>
 
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-white/40 mt-1">
                         {isSpeaking
                             ? "Speaking..."
-                            : "Voice Only"}
+                            : "Voice Only Mode"}
                     </p>
 
                 </div>
+
             )}
 
-
             {/* =====================================================
-                AVATAR TOGGLE
+                BOTTOM CONTROLS
             ===================================================== */}
 
-            <button
-                type="button"
-                onClick={onToggleAvatar}
-                className="absolute bottom-3 left-3 flex items-center gap-2 rounded-full bg-white/95 backdrop-blur-sm border border-gray-200 px-3 py-2 shadow-md hover:shadow-lg transition"
-            >
-                <span className="text-xs font-medium text-gray-600">
-                    Avatar
-                </span>
+            <div className="absolute bottom-5 left-5 right-5 z-30 flex items-center justify-between">
 
-                <span
-                    className={`relative w-10 h-5 rounded-full transition-colors ${showAvatar
+                {/* Avatar toggle */}
+
+                <button
+                    type="button"
+                    onClick={onToggleAvatar}
+                    className="group flex items-center gap-3 rounded-xl bg-black/30 backdrop-blur-xl border border-white/10 px-3.5 py-2.5 shadow-lg hover:bg-white/[0.08] hover:border-white/20 transition-all"
+                >
+
+                    <div
+                        className={`relative w-9 h-5 rounded-full transition-colors ${showAvatar
                             ? "bg-green-500"
-                            : "bg-gray-300"
-                        }`}
+                            : "bg-white/15"
+                            }`}
+                    >
+
+                        <motion.span
+                            animate={{
+                                x: showAvatar ? 18 : 2,
+                            }}
+                            transition={{
+                                duration: 0.2,
+                            }}
+                            className="absolute top-0.5 left-0 w-4 h-4 rounded-full bg-white shadow-md"
+                        />
+
+                    </div>
+
+                    <span className="text-xs font-medium text-white/70 group-hover:text-white transition">
+                        Avatar
+                    </span>
+
+                </button>
+
+                {/* Voice toggle */}
+
+                <button
+                    type="button"
+                    onClick={onToggleVoice}
+                    className="group flex items-center gap-2.5 rounded-xl bg-black/30 backdrop-blur-xl border border-white/10 px-3.5 py-2.5 shadow-lg hover:bg-white/[0.08] hover:border-white/20 transition-all"
                 >
-                    <motion.span
-                        animate={{
-                            x: showAvatar
-                                ? 20
-                                : 2,
-                        }}
-                        transition={{
-                            duration: 0.2,
-                        }}
-                        className="absolute top-0.5 left-0 w-4 h-4 rounded-full bg-white shadow"
-                    />
-                </span>
-            </button>
 
+                    {voiceEnabled ? (
+                        <Volume2
+                            size={15}
+                            className="text-green-400"
+                        />
+                    ) : (
+                        <VolumeX
+                            size={15}
+                            className="text-white/40"
+                        />
+                    )}
 
-            {/* =====================================================
-                VOICE TOGGLE
-            ===================================================== */}
+                    <span
+                        className={`text-xs font-medium ${voiceEnabled
+                            ? "text-green-400"
+                            : "text-white/50"
+                            }`}
+                    >
+                        Voice
+                    </span>
 
-            <button
-                type="button"
-                onClick={onToggleVoice}
-                className="absolute bottom-3 right-3 flex items-center gap-2 rounded-full bg-white/95 backdrop-blur-sm border border-gray-200 px-3 py-2 shadow-md hover:shadow-lg transition"
-            >
-
-                {voiceEnabled ? (
-                    <Volume2
-                        size={16}
-                        className="text-green-600"
-                    />
-                ) : (
-                    <VolumeX
-                        size={16}
-                        className="text-gray-400"
-                    />
-                )}
-
-                <span
-                    className={`text-xs font-medium ${voiceEnabled
-                            ? "text-green-600"
-                            : "text-gray-500"
-                        }`}
-                >
-                    Voice
-                </span>
-
-                <span
-                    className={`relative w-10 h-5 rounded-full ${voiceEnabled
+                    <div
+                        className={`relative w-9 h-5 rounded-full transition-colors ${voiceEnabled
                             ? "bg-green-500"
-                            : "bg-gray-300"
-                        }`}
-                >
-                    <motion.span
-                        animate={{
-                            x: voiceEnabled
-                                ? 20
-                                : 2,
-                        }}
-                        transition={{
-                            duration: 0.2,
-                        }}
-                        className="absolute top-0.5 left-0 w-4 h-4 rounded-full bg-white shadow"
-                    />
-                </span>
+                            : "bg-white/15"
+                            }`}
+                    >
 
-            </button>
+                        <motion.span
+                            animate={{
+                                x: voiceEnabled ? 18 : 2,
+                            }}
+                            transition={{
+                                duration: 0.2,
+                            }}
+                            className="absolute top-0.5 left-0 w-4 h-4 rounded-full bg-white shadow-md"
+                        />
+
+                    </div>
+
+                </button>
+
+            </div>
 
         </div>
     );
