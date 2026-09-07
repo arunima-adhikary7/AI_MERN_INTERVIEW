@@ -8,6 +8,7 @@ import cookieParser from "cookie-parser";
 import authRouter from "./routes/auth.route.js";
 import interviewRouter from "./routes/interview.route.js";
 import paymentRouter from "./routes/payment.route.js";
+import speechRouter from "./routes/speech.route.js";
 
 dotenv.config();
 const app = express();
@@ -27,6 +28,7 @@ app.use(cookieParser());
 app.use("/api/auth", authRouter);
 app.use("/api/user",userRouter);
 app.use("/api/interview", interviewRouter);
+app.use("/api/speech", speechRouter);
 app.use("/api/payment", paymentRouter);
 
 const PORT = process.env.PORT || 6000;

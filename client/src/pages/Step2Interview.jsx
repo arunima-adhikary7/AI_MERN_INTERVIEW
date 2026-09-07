@@ -3,7 +3,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-
+import { speakWithElevenLabs, stopElevenLabsSpeech } from "../services/elevenLabsSpeech"; 
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -93,7 +93,7 @@ const Step2Interview = () => {
     questions = [],
     interviewerMode = "voice",
   } = interviewData || {};
-  
+
   const [showAvatar, setShowAvatar] = useState(
     interviewerMode === "avatar"
   );
@@ -219,6 +219,13 @@ const Step2Interview = () => {
   const pausedDuringSpeakingRef =
     useRef(false);
 
+  const lipSyncRef = useRef({
+    active: false,
+    frames: [],
+    startedAt: 0,
+    frameRate: 60,
+    audio: null,
+  });
 
   const [
     voiceAnswerEnabled,
@@ -246,22 +253,22 @@ const Step2Interview = () => {
   // CHECK INTERVIEW DATA
   // =========================================================
 
-  useEffect(() => {
-    if (
-      !interviewData ||
-      !interviewId ||
-      !questions.length
-    ) {
-      navigate("/interview", {
-        replace: true,
-      });
-    }
-  }, [
-    interviewData,
-    interviewId,
-    questions.length,
-    navigate,
-  ]);
+  // useEffect(() => {
+  //   if (
+  //     !interviewData ||
+  //     !interviewId ||
+  //     !questions.length
+  //   ) {
+  //     navigate("/interview", {
+  //       replace: true,
+  //     });
+  //   }
+  // }, [
+  //   interviewData,
+  //   interviewId,
+  //   questions.length,
+  //   navigate,
+  // ]);
 
 
   // =========================================================
@@ -278,7 +285,7 @@ const Step2Interview = () => {
 
     submittingRef.current = false;
 
-    window.speechSynthesis?.cancel();
+    stopElevenLabsSpeech(lipSyncRef);
 
     setIsSpeaking(false);
 
@@ -545,89 +552,60 @@ const Step2Interview = () => {
   // AI TEXT TO SPEECH
   // =========================================================
 
-  const speakQuestion = () => {
-    if (!voiceEnabled) {
-      return;
-    }
-
-    if (!window.speechSynthesis) {
-      return;
-    }
-
-
-    // Stop previous speech.
-    window.speechSynthesis.cancel();
-
+  const speakQuestion = async () => {
+    if (!voiceEnabled) return;
+    if (!currentQuestionText) return;
 
     // Stop candidate microphone
-    // while AI is speaking.
     stopVoiceAnswer();
 
+    // Stop previous Azure speech
+    stopElevenLabsSpeech(lipSyncRef);
 
-    const speech =
-      new SpeechSynthesisUtterance(
-        currentQuestionText
-      );
+    try {
+      await speakWithElevenLabs(
+        currentQuestionText,
+        lipSyncRef,
+        {
+          onStart: () => {
+            setIsSpeaking(true);
+            stopVoiceAnswer();
+          },
 
+          onEnd: () => {
+            setIsSpeaking(false);
 
-    speech.rate = 0.9;
-    speech.pitch = 1;
-    speech.volume = 1;
+            if (
+              !voiceAnswerEnabled ||
+              submittingRef.current ||
+              finished ||
+              pausedRef.current
+            ) {
+              return;
+            }
 
+            setTimeout(() => {
+              if (
+                voiceAnswerEnabled &&
+                !submittingRef.current &&
+                !finished &&
+                !pausedRef.current
+              ) {
+                startVoiceAnswer();
+              }
+            }, 300);
+          },
 
-    // -----------------------------
-    // AI started speaking
-    // -----------------------------
-
-    speech.onstart = () => {
-      setIsSpeaking(true);
-
-      stopVoiceAnswer();
-    };
-
-
-    // -----------------------------
-    // AI finished speaking
-    // -----------------------------
-
-    const resumeRecognition =
-      () => {
-        setIsSpeaking(false);
-
-
-        if (
-          !voiceAnswerEnabled ||
-          submittingRef.current ||
-          finished ||
-          pausedRef.current
-        ) {
-          return;
+          onError: (error) => {
+            console.error("[Azure Speech] Error:", error);
+            setIsSpeaking(false);
+          },
         }
-
-
-        setTimeout(() => {
-          if (
-            voiceAnswerEnabled &&
-            !submittingRef.current &&
-            !finished &&
-            !pausedRef.current
-          ) {
-            startVoiceAnswer();
-          }
-        }, 300);
-      };
-
-
-    speech.onend =
-      resumeRecognition;
-
-    speech.onerror =
-      resumeRecognition;
-
-
-    window.speechSynthesis.speak(
-      speech
-    );
+      );
+    } catch (error) {
+      console.error("[Azure Speech] Failed:", error);
+      setIsSpeaking(false);
+    }
   };
 
 
@@ -652,10 +630,8 @@ const Step2Interview = () => {
 
     // Voice disabled.
     if (!voiceEnabled) {
-      window.speechSynthesis?.cancel();
-
+      stopElevenLabsSpeech(lipSyncRef);
       setIsSpeaking(false);
-
       return;
     }
 
@@ -694,7 +670,7 @@ const Step2Interview = () => {
     // Remember whether AI was speaking.
     pausedDuringSpeakingRef.current =
       isSpeaking ||
-      window.speechSynthesis?.speaking === true;
+      lipSyncRef.current.active;
 
 
     pausedRef.current = true;
@@ -708,7 +684,7 @@ const Step2Interview = () => {
 
     // Stop AI voice.
     try {
-      window.speechSynthesis?.cancel();
+      stopElevenLabsSpeech(lipSyncRef);
     } catch (_) { }
 
 
@@ -815,7 +791,7 @@ const Step2Interview = () => {
 
     // Stop AI voice
     try {
-      window.speechSynthesis?.cancel();
+      stopElevenLabsSpeech(lipSyncRef);
     } catch (_) { }
 
     setIsSpeaking(false);
@@ -975,7 +951,7 @@ const Step2Interview = () => {
 
 
     try {
-      window.speechSynthesis?.cancel();
+      stopElevenLabsSpeech(lipSyncRef);
     } catch (_) { }
 
   }, [finished]);
@@ -1060,7 +1036,7 @@ const Step2Interview = () => {
               interviewerMode={interviewerMode}
 
               avatar={avatar}
-
+              lipSyncRef={lipSyncRef}
               isSpeaking={isSpeaking}
 
               voiceEnabled={voiceEnabled}
@@ -1071,7 +1047,7 @@ const Step2Interview = () => {
                 setVoiceEnabled(nextValue);
 
                 if (!nextValue) {
-                  window.speechSynthesis?.cancel();
+                  stopElevenLabsSpeech(lipSyncRef);
                   setIsSpeaking(false);
                 }
               }}
