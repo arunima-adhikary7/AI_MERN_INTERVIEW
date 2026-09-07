@@ -12,7 +12,7 @@ import LandingPage from "./pages/LandingPage";
 import About from "./pages/About";
 
 import Step1SetUp from "./components/Step1SetUp";
-import Step2Interview from "./components/Step2Interview";
+import Step2Interview from "./pages/Step2Interview";
 import Step3Interview from "./components/Step3Interview";
 import Pricing from "./components/Pricing";
 import Profile from "./components/Profile";
@@ -20,7 +20,7 @@ import NotFound from "./pages/NotFound";
 
 import { setUserData } from "./redux/userSlice";
 import { Router } from "lucide-react";
-import Interview from "./pages/Interview";
+import Interview from "./components/Interview";
 import InterviewTemplate from "./pages/InterviewTemplate";
 
 export const ServerURL = import.meta.env.VITE_API_URL;
